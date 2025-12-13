@@ -52,3 +52,22 @@ export const updateCartSchema = z.object({
     quantity: z.number().int().nonnegative("Quantity cannot be negative"),
   }),
 });
+
+// order schema validation
+export const createOrderSchema = z.object({
+  body: z.object({
+    shippingAddress: z.object({
+      street: z.string().min(5, "Street address is too short"),
+      city: z.string().min(2, "City is required"),
+      pincode: z.string().length(6, "Invalid Pincode"), // Assuming Indian 6-digit pincode
+    }),
+  }),
+});
+
+export const verifyPaymentSchema = z.object({
+  body: z.object({
+    razorpayOrderId: z.string(),
+    razorpayPaymentId: z.string(),
+    signature: z.string(),
+  }),
+});

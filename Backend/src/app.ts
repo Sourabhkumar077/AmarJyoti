@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import cartRoutes from './routes/cart.routes';
+import paymentRoutes from './routes/payment.routes';
 
 const app: Application = express();
 
@@ -21,6 +22,7 @@ app.use(cors({
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/cart', cartRoutes);
+app.use('/api/v1/payment', paymentRoutes);
 
 // Health Check
 app.get('/', (req: Request, res: Response) => {

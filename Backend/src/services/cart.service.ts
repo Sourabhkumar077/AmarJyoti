@@ -60,3 +60,11 @@ export const removeItem = async (userId: string, productId: string) => {
   
   return await cartRepo.saveCart(cart);
 };
+
+export const clearCart = async (userId: string) => {
+  const cart = await cartRepo.findCartByUserId(userId);
+  if (cart) {
+    cart.items = []; // Empty the array
+    await cartRepo.saveCart(cart);
+  }
+};
