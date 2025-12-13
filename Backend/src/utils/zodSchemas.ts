@@ -37,3 +37,18 @@ export const productSchema = z.object({
     images: z.array(z.string().url()).min(1, "At least one image URL is required"),
   }),
 });
+
+// Schema for Adding to Cart
+export const addToCartSchema = z.object({
+  body: z.object({
+    productId: z.string().length(24, "Invalid Product ID"),
+    quantity: z.number().int().positive("Quantity must be at least 1"),
+  }),
+});
+
+// Schema for Updating Cart Item
+export const updateCartSchema = z.object({
+  body: z.object({
+    quantity: z.number().int().nonnegative("Quantity cannot be negative"),
+  }),
+});

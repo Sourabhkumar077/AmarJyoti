@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
+import cartRoutes from './routes/cart.routes';
 
 const app: Application = express();
 
@@ -19,6 +20,7 @@ app.use(cors({
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/cart', cartRoutes);
 
 // Health Check
 app.get('/', (req: Request, res: Response) => {
