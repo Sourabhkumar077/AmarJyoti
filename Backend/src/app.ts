@@ -2,6 +2,7 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import authRoutes from './routes/auth.routes';
 
 const app: Application = express();
 
@@ -13,6 +14,9 @@ app.use(cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true
 }));
+
+// Routes
+app.use('/api/v1/auth', authRoutes);
 
 // Health Check
 app.get('/', (req: Request, res: Response) => {
