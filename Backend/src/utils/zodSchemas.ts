@@ -71,3 +71,19 @@ export const verifyPaymentSchema = z.object({
     signature: z.string(),
   }),
 });
+
+// Admin dashboard side validation schema
+export const updateOrderStatusSchema = z.object({
+  body: z.object({
+    status: z.enum([
+      'Pending',
+      'Placed',
+      'Packed',
+      'Shipped',
+      'Delivered',
+      'Cancelled'
+    ], {
+      error: "Invalid Order Status"   
+    }),
+  }),
+});
