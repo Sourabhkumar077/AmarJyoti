@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { store } from './store/store';
 import Navbar from './components/layout/Navbar';
 import Home from './pages/Home';
+import Category from './pages/Category';
 
 // Initialize React Query Client
 const queryClient = new QueryClient();
@@ -15,11 +16,11 @@ function App() {
         <Router>
           <div className="flex flex-col min-h-screen bg-primary">
             <Navbar />
-            <main className="flex-grow">
+            <main className="grow">
               <Routes>
                 {/* Routes will be added here in next steps */}
                 <Route path="/" element={<Home />} />
-                
+                <Route path="/products" element={<Category />} />
                 <Route path="*" element={<div className="p-20 text-center">404 - Page Not Found</div>} />
               </Routes>
             </main>

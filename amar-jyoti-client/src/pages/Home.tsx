@@ -52,7 +52,7 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <section className="relative h-[85vh] flex items-center justify-center overflow-hidden bg-[#F9F4EF]">
         {/* Background Decorative Blob */}
-        <div className="absolute top-0 right-0 w-2/3 h-full bg-secondary/20 rounded-l-[10rem] blur-3xl -z-0" />
+        <div className="absolute top-0 right-0 w-2/3 h-full bg-secondary/20 rounded-l-[10rem] blur-3xl z-0" />
 
         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
           
@@ -132,14 +132,14 @@ const Home: React.FC = () => {
               <Link 
                 key={cat.id} 
                 to={cat.path}
-                className="group relative h-[500px] overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500"
+                className="group relative h-125 overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500"
               >
                 <img 
                   src={cat.image} 
                   alt={cat.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
                 
                 <div className="absolute bottom-0 left-0 p-8 w-full text-center">
                   <h3 className="text-2xl font-serif text-white mb-2">{cat.name}</h3>

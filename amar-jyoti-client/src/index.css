@@ -76,7 +76,7 @@
   }
 
   .card {
-    @apply bg-light rounded-lg shadow-[var(--shadow-soft)] p-6;
+    @apply bg-light rounded-lg shadow-(--shadow-soft) p-6;
   }
 
   .card-hover {
