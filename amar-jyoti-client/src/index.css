@@ -1,0 +1,123 @@
+/* -------------------------------------------------- */
+/* Google Fonts */
+/* -------------------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap");
+
+/* -------------------------------------------------- */
+/* Tailwind v4 Entry */
+/* -------------------------------------------------- */
+@import "tailwindcss";
+
+/* -------------------------------------------------- */
+/* Theme Tokens (Tailwind v4) */
+/* -------------------------------------------------- */
+@theme {
+  /* Colors – Pastel Luxury + Gold Accents */
+  --color-primary: #F8EDE3;        /* Page background */
+  --color-secondary: #F7D8B7;      /* Soft peach */
+  --color-accent: #D4AF37;         /* Gold CTA */
+  --color-dark: #2A2A2A;           /* Main text */
+  --color-light: #FFFFFF;          /* Cards */
+  --color-subtle-text: #6B6B6B;
+  --color-success: #10B981;
+  --color-error: #EF4444;
+
+  /* Typography */
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
+
+  /* Radius (soft luxury feel) */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+
+  /* Shadows */
+  --shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.12);
+}
+
+/* -------------------------------------------------- */
+/* Base Styles */
+/* -------------------------------------------------- */
+@layer base {
+  * {
+    @apply border-subtle-text/20;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-primary text-dark antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    @apply text-dark;
+  }
+
+  p {
+    @apply text-subtle-text leading-relaxed;
+  }
+
+  a {
+    @apply text-accent hover:opacity-80 transition;
+  }
+}
+
+/* -------------------------------------------------- */
+/* Component Utilities */
+/* -------------------------------------------------- */
+@layer components {
+  .container {
+    @apply mx-auto px-4 sm:px-6 lg:px-12 max-w-7xl;
+  }
+
+  .card {
+    @apply bg-light rounded-lg shadow-[var(--shadow-soft)] p-6;
+  }
+
+  .card-hover {
+    @apply transition hover:shadow-[var(--shadow-hover)];
+  }
+
+  .btn-primary {
+    @apply bg-accent text-light px-6 py-3 rounded-md font-medium
+           hover:opacity-90 transition;
+  }
+
+  .btn-outline {
+    @apply border border-dark/20 px-6 py-3 rounded-md
+           hover:bg-dark hover:text-light transition;
+  }
+
+  .section-title {
+    @apply text-3xl sm:text-4xl font-semibold mb-4;
+  }
+
+  .section-subtitle {
+    @apply text-subtle-text max-w-xl;
+  }
+}
+
+/* -------------------------------------------------- */
+/* Modern Scrollbar */
+/* -------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}
