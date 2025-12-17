@@ -9,7 +9,8 @@ import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Register from './pages/Register';
-
+import Checkout from './pages/CheckOut';
+import OrderSuccess from './pages/OrderSuccess';
 
 // Initialize React Query Client
 const queryClient = new QueryClient();
@@ -30,6 +31,9 @@ function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/order-success" element={<OrderSuccess />}/>
                 <Route path="*" element={<div className="p-20 text-center">404 - Page Not Found</div>} />
               </Routes>
             </main>

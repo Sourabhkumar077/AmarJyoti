@@ -4,6 +4,7 @@ import { ShoppingBag } from 'lucide-react';
 import type { Product } from '../../api/products.api';
 import { useAppDispatch } from '../../store/hooks';
 import { addToCartOptimistic } from '../../store/slices/cartSlice';
+import apiClient from '../../api/client';
 
 interface ProductCardProps {
   product: Product;
@@ -12,21 +13,30 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const dispatch = useAppDispatch();
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigating to the detail page
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
 
-    // Redux Action
-    dispatch(addToCartOptimistic({
-      productId: product._id,
-      name: product.name,
-      price: product.price,
-      image: product.images[0],
-      quantity: 1
-    }));
-    
-    // Optional: Add a toast notification here
-    console.log("Added to cart:", product.name);
+    try {
+      // 1. SYNC TO SERVER
+      await apiClient.post('/cart/add', {
+        productId: product._id,
+        quantity: 1
+      });
+
+      // 2. UPDATE REDUX
+      dispatch(addToCartOptimistic({
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.images[0],
+        quantity: 1
+      }));
+      
+      console.log("Added to cart:", product.name);
+    } catch (error) {
+      console.error("Failed to sync cart", error);
+    }
   };
 
   return (

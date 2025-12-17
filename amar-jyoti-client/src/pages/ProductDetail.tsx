@@ -6,6 +6,7 @@ import { fetchProductById } from '../api/products.api';
 import { useAppDispatch } from '../store/hooks';
 import { addToCartOptimistic } from '../store/slices/cartSlice';
 import Loader from '../components/common/Loader';
+import apiClient from '../api/client';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,12 +36,19 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart =  async () => {
     if (!product) return;
 
     setIsAdding(true);
     
-    // Dispatch Action to Redux
+    try {
+    // 1. SYNC TO SERVER (The missing piece)
+    await apiClient.post('/cart/add', {
+      productId: product._id,
+      quantity: quantity
+    });
+
+    // 2. UPDATE REDUX UI
     dispatch(addToCartOptimistic({
       productId: product._id,
       name: product.name,
@@ -49,12 +57,13 @@ const ProductDetail: React.FC = () => {
       quantity: quantity
     }));
 
-    // Simulate UX feedback
-    setTimeout(() => {
-      setIsAdding(false);
-      // Optional: Add Toast Notification here
-      // toast.success("Added to cart"); 
-    }, 600);
+    // Success feedback
+    setIsAdding(false);
+  } catch (error) {
+    console.error("Failed to add to cart:", error);
+    setIsAdding(false);
+    // Optional: alert("Could not add to cart");
+  }
   };
 
   // 3. Render States
@@ -85,12 +94,12 @@ const ProductDetail: React.FC = () => {
           Back to Collection
         </button>
 
-        <div className="bg-light rounded-xl shadow-[var(--shadow-soft)] p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="bg-light rounded-xl shadow-(--shadow-soft) p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-12">
           
           {/* Left Column: Image Gallery */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="aspect-[3/4] bg-secondary/10 rounded-lg overflow-hidden relative">
+            <div className="aspect-3/4 bg-secondary/10 rounded-lg overflow-hidden relative">
               <img 
                 src={product.images[selectedImageIndex]} 
                 alt={product.name}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
@@ -50,7 +50,7 @@ const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary/30 py-12 px-4">
-      <div className="max-w-md w-full space-y-8 bg-light p-8 md:p-10 rounded-xl shadow-[var(--shadow-soft)]">
+      <div className="max-w-md w-full space-y-8 bg-light p-8 md:p-10 rounded-xl shadow-(--shadow-soft)">
         
         <div className="text-center">
           <h2 className="mt-2 text-3xl font-serif font-bold text-dark">Join Amar Jyoti</h2>
