@@ -1,6 +1,5 @@
-import { createSlice } from '@reduxjs/toolkit';
-import type { PayloadAction } from '@reduxjs/toolkit';
-
+import { createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
 
 interface CartItem {
   productId: string;
@@ -21,16 +20,21 @@ const initialState: CartState = {
 };
 
 const cartSlice = createSlice({
-  name: 'cart',
+  name: "cart",
   initialState,
   reducers: {
     // Sync with backend response
     setCart: (state, action: PayloadAction<CartItem[]>) => {
       state.items = action.payload;
-      state.count = action.payload.reduce((acc, item) => acc + item.quantity, 0);
+      state.count = action.payload.reduce(
+        (acc, item) => acc + item.quantity,
+        0
+      );
     },
     addToCartOptimistic: (state, action: PayloadAction<CartItem>) => {
-      const existing = state.items.find(i => i.productId === action.payload.productId);
+      const existing = state.items.find(
+        (i) => i.productId === action.payload.productId
+      );
       if (existing) {
         existing.quantity += action.payload.quantity;
       } else {
@@ -41,9 +45,19 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.items = [];
       state.count = 0;
-    }
+    },
+    removeFromCart: (state, action: PayloadAction<string>) => {
+      // action.payload is productId
+      const index = state.items.findIndex(
+        (i) => i.productId === action.payload
+      );
+      if (index !== -1) {
+        state.count -= state.items[index].quantity;
+        state.items.splice(index, 1);
+      }
+    },
   },
 });
 
-export const { setCart, addToCartOptimistic, clearCart } = cartSlice.actions;
+export const { setCart, addToCartOptimistic, clearCart,removeFromCart } = cartSlice.actions;
 export default cartSlice.reducer;

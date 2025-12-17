@@ -6,6 +6,7 @@ import Navbar from './components/layout/Navbar';
 import Home from './pages/Home';
 import Category from './pages/Category';
 import ProductDetail from './pages/ProductDetail';
+import Cart from './pages/Cart';
 
 
 // Initialize React Query Client
@@ -24,6 +25,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Category />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/cart" element={<Cart />} />
                 <Route path="*" element={<div className="p-20 text-center">404 - Page Not Found</div>} />
               </Routes>
             </main>
