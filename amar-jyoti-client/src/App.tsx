@@ -7,6 +7,8 @@ import Home from './pages/Home';
 import Category from './pages/Category';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 
 // Initialize React Query Client
@@ -26,6 +28,8 @@ function App() {
                 <Route path="/products" element={<Category />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 <Route path="*" element={<div className="p-20 text-center">404 - Page Not Found</div>} />
               </Routes>
             </main>
