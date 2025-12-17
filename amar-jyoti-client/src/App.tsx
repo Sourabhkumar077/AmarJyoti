@@ -7,6 +7,8 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Loader from './components/common/Loader';
 import { useAppSelector } from './store/hooks';
+import AdminProducts from './pages/admin/AdminProducts';
+import ProductForm from './pages/admin/ProductForm';
 
 // Lazy Load Pages
 const Home = React.lazy(() => import('./pages/Home'));
@@ -54,7 +56,7 @@ function App() {
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  
+
                   {/* Protected User Routes */}
                   <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                   <Route path="/order-success" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
@@ -65,6 +67,9 @@ function App() {
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<Dashboard />} />
                       <Route path="orders" element={<AdminOrders />} />
+                      <Route path="products" element={<AdminProducts />} /> {/* New */}
+                      <Route path="products/new" element={<ProductForm />} /> {/* New */}
+                      <Route path="products/edit/:id" element={<ProductForm />} /> {/* New */}
                     </Route>
                   </Route>
 

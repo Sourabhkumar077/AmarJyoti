@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import { fetchMyOrders } from '../api/orders.api';
-import { Package, User, LogOut, Calendar, } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Package, User, LogOut, Calendar, LayoutDashboard, } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import Loader from '../components/common/Loader';
 
 const UserProfile: React.FC = () => {
@@ -53,6 +53,15 @@ const UserProfile: React.FC = () => {
                             <span className="inline-block px-3 py-1 bg-accent/10 text-accent text-xs font-bold rounded-full uppercase tracking-wider">
                                 {user.role} Account
                             </span>
+                            {user.role === 'admin' && (
+                                <Link
+                                    to="/admin"
+                                    className="w-full flex items-center justify-center p-3 bg-dark text-white rounded-lg hover:bg-black transition-colors shadow-md"
+                                >
+                                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                                    Open Dashboard
+                                </Link>
+                            )}
                         </div>
                     </div>
 

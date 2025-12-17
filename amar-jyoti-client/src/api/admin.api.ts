@@ -1,4 +1,5 @@
-import apiClient from './client';
+import apiClient from "./client";
+import { type Product } from "./products.api";
 
 export interface DashboardStats {
   totalUsers: number;
@@ -16,7 +17,13 @@ export interface Order {
   _id: string;
   user: { name: string; email: string };
   totalAmount: number;
-  status: 'Pending' | 'Placed' | 'Packed' | 'Shipped' | 'Delivered' | 'Cancelled';
+  status:
+    | "Pending"
+    | "Placed"
+    | "Packed"
+    | "Shipped"
+    | "Delivered"
+    | "Cancelled";
   createdAt: string;
   shippingAddress: {
     city: string;
@@ -25,19 +32,66 @@ export interface Order {
 
 // Fetch Stats
 export const fetchDashboardStats = async () => {
-  const response = await apiClient.get<DashboardStats>('/admin/stats');
+  const response = await apiClient.get<DashboardStats>("/admin/stats");
   return response.data;
 };
 
 // Fetch All Orders
 export const fetchAllOrders = async (status?: string) => {
-  const params = status ? `?status=${status}` : '';
+  const params = status ? `?status=${status}` : "";
   const response = await apiClient.get<Order[]>(`/admin/orders${params}`);
   return response.data;
 };
 
 // Update Order Status
 export const updateOrderStatus = async (orderId: string, status: string) => {
-  const response = await apiClient.put(`/admin/orders/${orderId}/status`, { status });
+  const response = await apiClient.put(`/admin/orders/${orderId}/status`, {
+    status,
+  });
+  return response.data;
+};
+
+// 1. Fetch Admin Products (Ideally returns ALL products, including hidden ones)
+export const fetchAdminProducts = async () => {
+  const response = await apiClient.get("/products");
+
+  // Debug: See exactly what the server sends
+  console.log("Admin Products Response:", response.data);
+
+  // Handle different response structures
+  if (Array.isArray(response.data)) {
+    return response.data; // Server sent: [...]
+  }
+
+  if (response.data && Array.isArray(response.data.products)) {
+    return response.data.products; // Server sent: { products: [...] }
+  }
+
+  if (response.data && Array.isArray(response.data.data)) {
+    return response.data.data; // Server sent: { data: [...] }
+  }
+
+  // Fallback: return empty array so UI doesn't crash
+  return [];
+};
+
+// 2. Create Product
+export const createProduct = async (productData: FormData | object) => {
+  const response = await apiClient.post("/products", productData);
+  return response.data;
+};
+
+// 3. Update Product (For Stock, Price, etc.)
+export const updateProduct = async (
+  id: string,
+  productData: Partial<Product>
+) => {
+  const response = await apiClient.put(`/products/${id}`, productData);
+  return response.data;
+};
+
+// 4. Delete Product
+export const deleteProduct = async (id: string) => {
+  const response = await apiClient.delete(`/products/${id}`);
   return response.data;
 };
