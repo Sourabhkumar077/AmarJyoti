@@ -27,7 +27,7 @@ const ProductForm: React.FC = () => {
     image2: '',
   });
 
-  
+
   // Fetch Categories for the Dropdown
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: ['categories'],
@@ -41,6 +41,17 @@ const ProductForm: React.FC = () => {
     queryFn: () => fetchProductById(id!),
     enabled: isEditMode,
   });
+  
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (formData.name || formData.price > 0) {
+        e.preventDefault();
+        e.returnValue = ''; // Standard browser warning
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [formData]);
 
   // Populate form when editing data loads
   useEffect(() => {

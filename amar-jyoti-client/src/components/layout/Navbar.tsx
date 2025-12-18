@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
         
         {/* Logo */}
         <Link to="/" className="text-2xl font-serif font-bold text-accent tracking-wide hover:opacity-80 transition-opacity">
-          Amar Jyoti
+         <img className='w-45 h-12 bg-transparent' src="/logo.png" alt="Logo" />
         </Link>
 
         {/* Desktop Links */}
