@@ -112,26 +112,26 @@ const Home: React.FC = () => {
           >
             <div className="space-y-4 translate-y-8">
               <img
-                src="https://images.unsplash.com/photo-1583391733958-e0295c29272e?auto=format&fit=crop&q=80&w=600"
+                src="/OIP (1).jpg"
                 alt="Ethnic Wear 1"
-                className="rounded-2xl shadow-xl object-cover h-64 w-full"
+                className="rounded-2xl shadow-xl object-contain h-64 w-full "
               />
               <img
-                src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=600"
+                src="/OIP (2).jpg"
                 alt="Ethnic Wear 2"
-                className="rounded-2xl shadow-xl object-cover h-48 w-full"
+                className="rounded-2xl shadow-xl  object-contain  h-48 w-full"
               />
             </div>
             <div className="space-y-4">
               <img
-                src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&q=80&w=600"
+                src="/OIP.jpg"
                 alt="Ethnic Wear 3"
-                className="rounded-2xl shadow-xl object-cover h-48 w-full"
+                className="rounded-2xl shadow-xl  object-contain  h-48 w-full"
               />
               <img
-                src="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=600"
+                src="/OIP (3).jpg"
                 alt="Ethnic Wear 4"
-                className="rounded-2xl shadow-xl object-cover h-64 w-full"
+                className="rounded-2xl shadow-xl  object-contain  h-64 w-full"
               />
             </div>
           </motion.div>
