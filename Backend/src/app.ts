@@ -7,6 +7,8 @@ import productRoutes from './routes/product.routes';
 import cartRoutes from './routes/cart.routes';
 import paymentRoutes from './routes/payment.routes';
 import adminRoutes from './routes/admin.routes';
+import uploadRoutes from './routes/upload.routes';
+import categoryRoutes from './routes/category.routes';
 
 const app: Application = express();
 
@@ -25,6 +27,8 @@ app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/cart', cartRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/categories', categoryRoutes);
 
 // Health Check
 app.get('/', (req: Request, res: Response) => {

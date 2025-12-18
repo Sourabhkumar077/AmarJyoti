@@ -95,3 +95,14 @@ export const deleteProduct = async (id: string) => {
   const response = await apiClient.delete(`/products/${id}`);
   return response.data;
 };
+
+// 5. Upload Image Helper
+export const uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append('image', file); // Must match backend's upload.single('image')
+
+  const response = await apiClient.post('/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};

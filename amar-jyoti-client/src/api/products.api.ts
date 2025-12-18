@@ -23,6 +23,10 @@ interface ProductFilters {
   maxPrice?: number;
   sortBy?: string; // 'newest' | 'price_asc' | 'price_desc'
 }
+export interface Category {
+  _id: string;
+  name: string;
+}
 
 export const fetchProducts = async (filters: ProductFilters): Promise<Product[]> => {
   // Build query string manually or using URLSearchParams
@@ -41,5 +45,11 @@ export const fetchProducts = async (filters: ProductFilters): Promise<Product[]>
 
 export const fetchProductById = async (id: string): Promise<Product> => {
   const response = await apiClient.get<Product>(`/products/${id}`);
+  return response.data;
+};
+
+// to fetch categories
+export const fetchCategories = async () => {
+  const response = await apiClient.get<Category[]>('/categories');
   return response.data;
 };
