@@ -26,7 +26,16 @@ const AdminLayout = React.lazy(() => import('./components/layout/AdminLayout'));
 const Dashboard = React.lazy(() => import('./pages/admin/Dashboard'));
 const AdminOrders = React.lazy(() => import('./pages/admin/AdminOrders'));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes tak data purana nahi manega (Refetch nahi karega)
+      gcTime: 1000 * 60 * 10,   // 10 minutes tak cache me rakhega
+      retry: 1,                 // Fail hone par sirf 1 baar retry karega (Fast fail)
+      refetchOnWindowFocus: false, // Window tab change karne par refetch band
+    },
+  },
+});
 
 // Protected Route Component (User)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

@@ -3,7 +3,8 @@ import {
   addToCartHandler, 
   getCartHandler, 
   removeCartItemHandler, 
-  updateCartItemHandler 
+  updateCartItemHandler ,
+  mergeCartHandler
 } from '../controllers/cart.controller';
 import { protect } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/zodValidation';
@@ -33,4 +34,6 @@ router.delete(
   removeCartItemHandler
 ); // DELETE /api/v1/cart/remove/:itemId
 
+// POST : for merging the carts 
+router.post('/merge', protect, mergeCartHandler);
 export default router;

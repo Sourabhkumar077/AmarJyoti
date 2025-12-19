@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import {  Lock, ArrowRight, AlertCircle, Smartphone } from 'lucide-react';
+import { Lock, ArrowRight, AlertCircle, Smartphone } from 'lucide-react';
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
 
+import { mergeGuestCart, fetchCart } from '../store/slices/cartSlice';
+
 const Login: React.FC = () => {
-    // Changed 'email' to 'identifier'
+    
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
@@ -19,16 +21,26 @@ const Login: React.FC = () => {
 
     const loginMutation = useMutation({
         mutationFn: async (data: any) => {
-            // Note: Backend expects 'identifier', not 'email'
             const response = await apiClient.post('/auth/login', data);
             return response.data;
         },
-        onSuccess: (data) => {
+        
+        onSuccess: async (data) => {
             dispatch(setCredentials({
                 user: data.user,
                 token: data.token
             }));
 
+            const localCart = localStorage.getItem('guest_cart');
+            if (localCart) {
+               // @ts-ignore
+               await dispatch(mergeGuestCart()); 
+            } else {
+               // @ts-ignore
+               dispatch(fetchCart()); 
+            }
+
+            // Redirect Logic
             if (data.user.role === 'admin') {
                 navigate('/admin');
             } else if (redirectTarget === 'checkout') {
@@ -96,7 +108,6 @@ const Login: React.FC = () => {
                         <div>
                             <div className="flex items-center justify-between mb-1">
                                 <label htmlFor="password" className="block text-sm font-medium text-dark">Password</label>
-                                {/* Forgot Password Link added here */}
                                 <Link to="/forgot-password" className="text-xs text-accent hover:text-yellow-600 font-medium">
                                     Forgot Password?
                                 </Link>

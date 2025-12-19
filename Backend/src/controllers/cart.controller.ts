@@ -53,3 +53,19 @@ export const removeCartItemHandler = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+// merge guest & logged user cart info
+export const mergeCartHandler = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!._id.toString();
+    const { items } = req.body; // Expecting array of { productId, quantity }
+
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({ message: "Invalid items format" });
+    }
+
+    const updatedCart = await cartService.mergeCarts(userId, items);
+    res.status(200).json(updatedCart);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
