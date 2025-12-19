@@ -1,23 +1,40 @@
 import { z } from 'zod';
 
-// Schema for User Registration
+// 1. Schema for User Registration (FIXED)
 export const registerSchema = z.object({
   body: z.object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
+    name: z.string().min(2, "Name is required"),
+    email: z.string().email("Invalid email format").optional().or(z.literal('')), 
+    phone: z.string().min(10, "Phone number must be at least 10 digits"), // Required
     password: z.string().min(6, "Password must be at least 6 characters"),
   }),
 });
 
-// Schema for User Login
+// 2. Schema for User Login
 export const loginSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email address"),
+    identifier: z.string().min(1, "Email or Phone is required"), 
     password: z.string().min(1, "Password is required"),
   }),
 });
 
-// Schema for Google Auth (for later use)
+// 3. Forgot Password Schema
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    identifier: z.string().min(1, "Email or Phone is required"),
+  }),
+});
+
+// 4. Reset Password Schema
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    identifier: z.string().min(1, "Email or Phone is required"),
+    otp: z.string().length(6, "OTP must be 6 digits"),
+    newPassword: z.string().min(6, "New Password must be at least 6 chars")
+  }),
+});
+
+// Schema for Google Auth
 export const googleAuthSchema = z.object({
   body: z.object({
     credential: z.string(),
@@ -29,10 +46,10 @@ export const productSchema = z.object({
   body: z.object({
     name: z.string().min(3, "Product name is too short"),
     description: z.string().min(10, "Description must be detailed"),
-    category: z.string().length(24, "Invalid Category ID"), // MongoDB ObjectId length
+    category: z.string().length(24, "Invalid Category ID"),
     price: z.number().positive("Price must be positive"),
     stock: z.number().int().nonnegative("Stock cannot be negative"),
-    fabric: z.string().min(2),
+    fabric: z.string().min(2).optional(), // Optional kar diya taaki empty na phate
     colors: z.array(z.string()).min(1, "At least one color is required"),
     images: z.array(z.string().url()).min(1, "At least one image URL is required"),
   }),
@@ -59,7 +76,7 @@ export const createOrderSchema = z.object({
     shippingAddress: z.object({
       street: z.string().min(5, "Street address is too short"),
       city: z.string().min(2, "City is required"),
-      pincode: z.string().length(6, "Invalid Pincode"), // Assuming Indian 6-digit pincode
+      pincode: z.string().length(6, "Invalid Pincode"),
     }),
   }),
 });

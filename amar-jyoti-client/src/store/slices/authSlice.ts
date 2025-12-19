@@ -1,11 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-
 interface User {
   id: string;
   name: string;
-  email: string;
+  email?: string; // Optional
+  phone?: string; // New Optional
   role: 'user' | 'admin';
 }
 

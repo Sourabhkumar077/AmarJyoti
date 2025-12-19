@@ -1,24 +1,25 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import {  Lock, ArrowRight, AlertCircle, Smartphone } from 'lucide-react';
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
 
 const Login: React.FC = () => {
-    const [email, setEmail] = useState('');
+    // Changed 'email' to 'identifier'
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
 
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const [searchParams] = useSearchParams();
-    const redirectTarget = searchParams.get('redirect'); // e.g., 'checkout'
+    const redirectTarget = searchParams.get('redirect'); 
 
-    // React Query Mutation for API Call
     const loginMutation = useMutation({
         mutationFn: async (data: any) => {
+            // Note: Backend expects 'identifier', not 'email'
             const response = await apiClient.post('/auth/login', data);
             return response.data;
         },
@@ -28,9 +29,8 @@ const Login: React.FC = () => {
                 token: data.token
             }));
 
-            // Smart Redirect Logic
             if (data.user.role === 'admin') {
-                navigate('/admin'); // <--- Admins go straight to Dashboard
+                navigate('/admin');
             } else if (redirectTarget === 'checkout') {
                 navigate('/checkout');
             } else {
@@ -44,8 +44,8 @@ const Login: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email || !password) return;
-        loginMutation.mutate({ email, password });
+        if (!identifier || !password) return;
+        loginMutation.mutate({ identifier, password });
     };
 
     return (
@@ -56,7 +56,7 @@ const Login: React.FC = () => {
                 <div className="text-center">
                     <h2 className="mt-2 text-3xl font-serif font-bold text-dark">Welcome Back</h2>
                     <p className="mt-2 text-sm text-subtle-text">
-                        Sign in to access your orders and wishlist
+                        Sign in with your Email or Phone
                     </p>
                 </div>
 
@@ -71,27 +71,36 @@ const Login: React.FC = () => {
                 {/* Form */}
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4">
+                        
+                        {/* Identifier Input (Email/Phone) */}
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-dark mb-1">Email Address</label>
+                            <label htmlFor="identifier" className="block text-sm font-medium text-dark mb-1">Email or Phone Number</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-subtle-text/50" />
+                                    <Smartphone className="h-5 w-5 text-subtle-text/50" />
                                 </div>
                                 <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
+                                    id="identifier"
+                                    name="identifier"
+                                    type="text"
                                     required
                                     className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm transition-all"
-                                    placeholder="you@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter email or phone"
+                                    value={identifier}
+                                    onChange={(e) => setIdentifier(e.target.value)}
                                 />
                             </div>
                         </div>
 
+                        {/* Password Input */}
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-dark mb-1">Password</label>
+                            <div className="flex items-center justify-between mb-1">
+                                <label htmlFor="password" className="block text-sm font-medium text-dark">Password</label>
+                                {/* Forgot Password Link added here */}
+                                <Link to="/forgot-password" className="text-xs text-accent hover:text-yellow-600 font-medium">
+                                    Forgot Password?
+                                </Link>
+                            </div>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Lock className="h-5 w-5 text-subtle-text/50" />

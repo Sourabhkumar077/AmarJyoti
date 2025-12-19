@@ -17,6 +17,8 @@ const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
 const Cart = React.lazy(() => import('./pages/Cart'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
+const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 const Checkout = React.lazy(() => import('./pages/Checkout'));
 const OrderSuccess = React.lazy(() => import('./pages/OrderSuccess'));
 const UserProfile = React.lazy(() => import('./pages/UserProfile'));
@@ -56,6 +58,8 @@ function App() {
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
 
                   {/* Protected User Routes */}
                   <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />

@@ -1,50 +1,63 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
-// 1. Define the TypeScript Interface
 export interface IUser extends Document {
   name: string;
-  email: string;
-  passwordHash?: string; // Optional because Google Auth users won't have one
-  googleId?: string;
+  email?: string; // Optional
+  phone?: string; // Optional
+  password?: string;
   role: 'user' | 'admin';
   createdAt: Date;
-  updatedAt: Date;
+  
+  // Reset Password & Locking mechanism
+  resetPasswordOTP?: string;
+  resetPasswordExpires?: Date;
+  resetPasswordAttempts: number;
+  lockUntil?: Date;
+  
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-// 2. Define the Mongoose Schema
-const UserSchema: Schema = new Schema(
-  {
-    name: { 
-      type: String, 
-      required: true,
-      trim: true 
-    },
-    email: { 
-      type: String, 
-      required: true, 
-      unique: true, 
-      lowercase: true,
-      trim: true
-    },
-    passwordHash: { 
-      type: String, 
-      select: false // Security: Never return password by default
-    },
-    googleId: { 
-      type: String, 
-      unique: true, 
-      sparse: true // Allows multiple null values (for non-Google users)
-    },
-    role: { 
-      type: String, 
-      enum: ['user', 'admin'], 
-      default: 'user' 
-    },
+const UserSchema: Schema = new Schema({
+  name: { type: String, required: true },
+  email: { 
+    type: String, 
+    unique: true, 
+    sparse: true, 
+    lowercase: true 
   },
-  { 
-    timestamps: true // Automatically adds createdAt and updatedAt
-  }
-);
+  phone: { 
+    type: String, 
+    unique: true, 
+    sparse: true 
+  },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  
+  // Rate Limiting & Reset Logic
+  resetPasswordOTP: { type: String },
+  resetPasswordExpires: { type: Date },
+  resetPasswordAttempts: { type: Number, default: 0 },
+  lockUntil: { type: Date }
+}, {
+  timestamps: true,
+});
 
-// 3. Export the Model
+// FIXED: Remove 'next' parameter (async handles it) and type 'this' explicitly
+UserSchema.pre('save', async function (this: IUser) {
+  if (!this.isModified('password')) return;
+  
+  // Agar password hai to hi hash karein
+  if(this.password){
+      const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
+  }
+});
+
+// Compare password method
+UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+  if(!this.password) return false;
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
 export default mongoose.model<IUser>('User', UserSchema);

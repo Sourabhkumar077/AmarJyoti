@@ -47,3 +47,23 @@ export const loginHandler = async (req: Request, res: Response) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const forgotPassword = async (req: Request, res: Response) => {
+    try {
+        const { identifier } = req.body;
+        const result = await authService.requestPasswordReset(identifier);
+        res.status(200).json(result);
+    } catch (error: any) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+export const resetPasswordHandler = async (req: Request, res: Response) => {
+    try {
+        const { identifier, otp, newPassword } = req.body;
+        const result = await authService.resetPassword(identifier, otp, newPassword);
+        res.status(200).json(result);
+    } catch (error: any) {
+        res.status(400).json({ message: error.message });
+    }
+};

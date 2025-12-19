@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, Phone } from 'lucide-react'; // Phone icon added
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState(''); // New State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -45,7 +46,20 @@ const Register: React.FC = () => {
       setErrorMsg("Password must be at least 6 characters");
       return;
     }
-    registerMutation.mutate({ name, email, password });
+    // Phone Validation (Simple check)
+    if (phone.length < 10) {
+      setErrorMsg("Please enter a valid phone number");
+      return;
+    }
+    const payload = {
+      name,
+      phone,
+      password,
+      ...(email.trim() !== '' && { email: email.trim() }) // Sirf tab add karo jab email me kuch likha ho
+    };
+
+    // Payload to send 
+    registerMutation.mutate(payload);
   };
 
   return (
@@ -68,8 +82,10 @@ const Register: React.FC = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
+            
+            {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-dark mb-1">Full Name</label>
+              <label className="block text-sm font-medium text-dark mb-1">Full Name *</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-subtle-text/50" />
@@ -85,15 +101,34 @@ const Register: React.FC = () => {
               </div>
             </div>
 
+            {/* Phone Field (Required) */}
             <div>
-              <label className="block text-sm font-medium text-dark mb-1">Email Address</label>
+              <label className="block text-sm font-medium text-dark mb-1">Phone Number *</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-5 w-5 text-subtle-text/50" />
+                </div>
+                <input
+                  type="tel"
+                  required
+                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm"
+                  placeholder="9876543210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Email Field (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-dark mb-1">Email Address (Optional)</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-subtle-text/50" />
                 </div>
                 <input
                   type="email"
-                  required
+                  // required <-- Removed required
                   className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm"
                   placeholder="you@example.com"
                   value={email}
@@ -102,8 +137,9 @@ const Register: React.FC = () => {
               </div>
             </div>
 
+            {/* Password Field */}
             <div>
-              <label className="block text-sm font-medium text-dark mb-1">Password</label>
+              <label className="block text-sm font-medium text-dark mb-1">Password *</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-subtle-text/50" />
