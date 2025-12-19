@@ -48,3 +48,13 @@ export const findAllProducts = async (filters: ProductFilters, sort: any = { cre
     .populate('category', 'name')
     .limit(50);
 };
+
+// product delete 
+export const deleteProductById = async (id: string): Promise<IProduct | null> => {
+  return await Product.findByIdAndDelete(id);
+};
+
+export const updateProductById = async (id: string, data: Partial<IProduct>): Promise<IProduct | null> => {
+  // { new: true } return new updatted data
+  return await Product.findByIdAndUpdate(id, data, { new: true });
+};

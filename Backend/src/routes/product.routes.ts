@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createProductHandler, getProductsHandler, getProductByIdHandler } from '../controllers/product.controller';
+import { createProductHandler, getProductsHandler, getProductByIdHandler ,deleteProductHandler,updateProductHandler} from '../controllers/product.controller';
 import { protect, adminOnly } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/zodValidation';
 import { productSchema } from '../utils/zodSchemas';
@@ -20,4 +20,18 @@ router.post(
   createProductHandler
 );
 
+router.delete(
+  '/:id', 
+  protect, 
+  adminOnly, 
+  deleteProductHandler
+);
+
+router.put(
+  '/:id', 
+  protect, 
+  adminOnly, 
+  // validate(productSchema), if validation is strict then we can remove it or use it
+  updateProductHandler
+);
 export default router;

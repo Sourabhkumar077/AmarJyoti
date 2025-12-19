@@ -44,3 +44,20 @@ export const listProducts = async (queryParams: any) => {
 
   return await productRepo.findAllProducts(filters, sort);
 };
+
+export const removeProduct = async (id: string) => {
+  const deletedProduct = await productRepo.deleteProductById(id);
+  if (!deletedProduct) {
+    throw new Error('Product not found');
+  }
+  return deletedProduct;
+};
+
+export const updateProductDetails = async (id: string, data: Partial<IProduct>) => {
+  const updatedProduct = await productRepo.updateProductById(id, data);
+  if (!updatedProduct) {
+    throw new Error('Product not found');
+  }
+  return updatedProduct;
+};
+

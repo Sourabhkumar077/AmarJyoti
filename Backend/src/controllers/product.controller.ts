@@ -41,3 +41,35 @@ export const getProductByIdHandler = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// 4. Delete Product (Admin Only)
+export const deleteProductHandler = async (req: Request, res: Response) => {
+  try {
+    await productService.removeProduct(req.params.id);
+    res.status(200).json({
+      message: "Product deleted successfully"
+    });
+  } catch (error: any) {
+    if (error.message === 'Product not found') {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 5. Update Product (Admin Only)
+export const updateProductHandler = async (req: Request, res: Response) => {
+  try {
+    // req.body me wo naya data hai jo frontend se aaya hai (pre-filled + edited)
+    const product = await productService.updateProductDetails(req.params.id, req.body);
+    res.status(200).json({
+      message: "Product updated successfully",
+      product
+    });
+  } catch (error: any) {
+    if (error.message === 'Product not found') {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
