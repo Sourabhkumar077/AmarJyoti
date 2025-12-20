@@ -9,7 +9,7 @@ import { setCredentials } from '../store/slices/authSlice';
 import { mergeGuestCart, fetchCart } from '../store/slices/cartSlice';
 
 const Login: React.FC = () => {
-    
+
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
@@ -17,14 +17,14 @@ const Login: React.FC = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const [searchParams] = useSearchParams();
-    const redirectTarget = searchParams.get('redirect'); 
+    const redirectTarget = searchParams.get('redirect');
 
     const loginMutation = useMutation({
         mutationFn: async (data: any) => {
             const response = await apiClient.post('/auth/login', data);
             return response.data;
         },
-        
+
         onSuccess: async (data) => {
             dispatch(setCredentials({
                 user: data.user,
@@ -33,12 +33,12 @@ const Login: React.FC = () => {
 
             const localCart = localStorage.getItem('guest_cart');
             if (localCart) {
-               // @ts-ignore
-               await dispatch(mergeGuestCart()); 
-            } else {
-               // @ts-ignore
-               dispatch(fetchCart()); 
+                // @ts-ignore
+                await dispatch(mergeGuestCart());
             }
+            // @ts-ignore
+            dispatch(fetchCart());
+
 
             // Redirect Logic
             if (data.user.role === 'admin') {
@@ -83,7 +83,7 @@ const Login: React.FC = () => {
                 {/* Form */}
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4">
-                        
+
                         {/* Identifier Input (Email/Phone) */}
                         <div>
                             <label htmlFor="identifier" className="block text-sm font-medium text-dark mb-1">Email or Phone Number</label>

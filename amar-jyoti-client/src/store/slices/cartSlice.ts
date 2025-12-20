@@ -31,10 +31,9 @@ export const fetchCart = createAsyncThunk(
   async (_, { rejectWithValue }) => {
   try {
     const response = await apiClient.get('/cart');
-    // Format response to match our state structure
     return response.data.items.map((item: any) => ({
       product: item.product,
-      productId: item.product._id,
+      productId: item.product._id, // use this Safe ID
       quantity: item.quantity,
       _id: item._id
     }));
@@ -43,7 +42,7 @@ export const fetchCart = createAsyncThunk(
   }
 });
 
-// 2. Add to Cart (Server)
+// 2. Add to Cart (Keep same)
 export const addToCartAsync = createAsyncThunk(
   'cart/addToCart',
   async ({ productId, quantity }: { productId: string; quantity: number }, { rejectWithValue }) => {
@@ -56,33 +55,35 @@ export const addToCartAsync = createAsyncThunk(
   }
 );
 
-// 3. Remove from Cart (Server)
+// 3. Remove from Cart (Server) -
 export const removeFromCartAsync = createAsyncThunk(
   'cart/removeFromCart',
-  async (cartItemId: string, { rejectWithValue }) => {
+  
+  async (productId: string, { rejectWithValue }) => {
     try {
-      // Note: Backend might expect ItemID or ProductID, adjust accordingly
-      await apiClient.delete(`/cart/remove/${cartItemId}`);
-      return cartItemId;
+      // Backend expects /cart/remove/:productId
+      await apiClient.delete(`/cart/remove/${productId}`);
+      return productId;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to remove item');
     }
   }
 );
 
-// 4. Update Quantity (Server)
+// 4. Update Quantity (Server) - 
 export const updateCartItemAsync = createAsyncThunk(
   'cart/updateCartItem',
-  async ({ cartItemId, quantity }: { cartItemId: string; quantity: number }, { rejectWithValue }) => {
+
+  async ({ productId, quantity }: { productId: string; quantity: number }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.put('/cart/update', { cartItemId, quantity });
+      // Backend expects PUT /cart/update/:productId
+      const response = await apiClient.put(`/cart/update/${productId}`, { quantity });
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update cart');
     }
   }
 );
-
 // 5. Merge Guest Cart
 export const mergeGuestCart = createAsyncThunk(
   'cart/mergeGuestCart',
@@ -163,9 +164,9 @@ const cartSlice = createSlice({
         state.loading = false;
       })
       .addCase(removeFromCartAsync.fulfilled, (state, action) => {
-        // Backend removal success, update UI
+        // ✅ Match against productId to ensure UI updates correctly
         state.items = state.items.filter(item => 
-            item._id !== action.payload && item.product._id !== action.payload
+            item.productId !== action.payload
         );
       })
       .addCase(mergeGuestCart.fulfilled, (state, action) => {
