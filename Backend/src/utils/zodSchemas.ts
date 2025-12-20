@@ -4,7 +4,10 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   body: z.object({
     name: z.string().min(2, "Name is required"),
-    email: z.string().email("Invalid email format").optional().or(z.literal('')), 
+    email:z.email("Invalid email format") // Basic check (@ aur .)
+    .min(5, "Email is too short")
+    .trim()
+    .toLowerCase(), 
     phone: z.string().min(10, "Phone number must be at least 10 digits"), // Required
     password: z.string().min(6, "Password must be at least 6 characters"),
   }),

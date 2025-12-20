@@ -1,12 +1,26 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
 import User from '../models/user.model';
+import sendEmail from '../utils/sendEmail';
+import crypto from 'crypto';
 
 export const registerHandler = async (req: Request, res: Response) => {
   try {
     // Data is already validated by middleware
     const { user, token } = await authService.register(req.body);
 
+    const message = `Hello ${user.name},\n\nWelcome to Amar Jyoti! Your account has been successfully created.\nWe are excited to have you on board.\n\nHappy Shopping!`;
+    if (user.email) {
+      try {
+          await sendEmail({
+              email: user.email, // TypeScript now knows this is a string
+              subject: 'Welcome to Amar Jyoti - Registration Successful',
+              message: message
+          });
+      } catch (err) {
+          console.log("Email sending failed:", err);
+      }
+    }
     // Send response
     res.status(201).json({
       message: "User registered successfully",
@@ -51,11 +65,35 @@ export const loginHandler = async (req: Request, res: Response) => {
 
 export const forgotPassword = async (req: Request, res: Response) => {
     try {
-        const { identifier } = req.body;
-        const result = await authService.requestPasswordReset(identifier);
-        res.status(200).json(result);
+        const { identifier } = req.body; 
+        const user = await User.findOne({ email: identifier });
+
+       if (!user || !user.email) {
+            return res.status(404).json({ message: "User not found with this email" });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Save OTP to DB (Valid for 10 mins)
+        user.resetPasswordOTP = otp;
+        user.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 Minutes
+        await user.save();
+
+        // 📧 Send OTP Email
+        const message = `You requested a password reset.\n\nYour OTP is: ${otp}\n\nThis OTP is valid for 10 minutes only.\nIf you did not request this, please ignore this email.`;
+
+        await sendEmail({
+            email: user.email,
+            subject: 'Password Reset OTP - Amar Jyoti',
+            message: message
+        });
+
+        res.status(200).json({ message: `OTP sent to ${user.email}` });
+
     } catch (error: any) {
-        res.status(400).json({ message: error.message });
+        // user.resetPasswordOTP = undefined; await user.save();
+        res.status(500).json({ message: "Email could not be sent", error: error.message });
     }
 };
 
