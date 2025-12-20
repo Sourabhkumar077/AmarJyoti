@@ -8,6 +8,14 @@ export interface IUser extends Document {
   password?: string;
   role: 'user' | 'admin';
   createdAt: Date;
+  addresses: {
+    street: string;
+    city: string;
+    state: string;    // New
+    country: string;  // New
+    pincode: string;
+    isDefault: boolean;
+  }[];
   
   // Reset Password & Locking mechanism
   resetPasswordOTP?: string;
@@ -33,6 +41,14 @@ const UserSchema: Schema = new Schema({
   },
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  addresses: [{
+    street: { type: String, required: true },
+    city: { type: String, required: true },
+    state: { type: String, required: true },   
+    country: { type: String, default: 'India' }, 
+    pincode: { type: String, required: true },
+    isDefault: { type: Boolean, default: false }
+  }],
   
   // Rate Limiting & Reset Logic
   resetPasswordOTP: { type: String },
@@ -46,8 +62,6 @@ const UserSchema: Schema = new Schema({
 // FIXED: Remove 'next' parameter (async handles it) and type 'this' explicitly
 UserSchema.pre('save', async function (this: IUser) {
   if (!this.isModified('password')) return;
-  
-  // Agar password hai to hi hash karein
   if(this.password){
       const salt = await bcrypt.genSalt(10);
       this.password = await bcrypt.hash(this.password, salt);

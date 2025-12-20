@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
+import User from '../models/user.model';
 
 export const registerHandler = async (req: Request, res: Response) => {
   try {
@@ -66,4 +67,57 @@ export const resetPasswordHandler = async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(400).json({ message: error.message });
     }
+};
+
+export const updateProfileHandler = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+    const { name, phone, address } = req.body; 
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // 1. Update Basic Info
+    if (name) user.name = name;
+    if (phone) user.phone = phone; // Phone update logic
+
+    // 2. Add New Address (Structured)
+    if (address) {
+       // Validate required fields
+       if(!address.street || !address.city || !address.state || !address.pincode) {
+           return res.status(400).json({ message: "Street, City, State and Pincode are required" });
+       }
+
+       // Agar default set kar rahe ho, to purane default hata do
+       if (address.isDefault) {
+         user.addresses.forEach((a: any) => a.isDefault = false);
+       }
+
+       user.addresses.push({
+         street: address.street,
+         city: address.city,
+         state: address.state,       // New
+         country: address.country || 'India', // New (Default India)
+         pincode: address.pincode,
+         isDefault: address.isDefault || false
+       });
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        addresses: user.addresses
+      }
+    });
+
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
 };

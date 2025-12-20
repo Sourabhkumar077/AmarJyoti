@@ -7,6 +7,14 @@ interface User {
   email?: string; // Optional
   phone?: string; // New Optional
   role: 'user' | 'admin';
+  addresses?: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    pincode: string;
+    isDefault: boolean;
+  }[];
 }
 
 interface AuthState {
