@@ -7,7 +7,6 @@ import { clearCart } from '../store/slices/cartSlice';
 import apiClient from '../api/client';
 import { loadRazorpayScript } from '../utils/loadRazorpay';
 
-// TypeScript definition for Razorpay on Window object
 declare global {
   interface Window {
     Razorpay: any;
@@ -28,9 +27,15 @@ const Checkout: React.FC = () => {
   });
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Calculate Totals
-  const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const shipping = subtotal > 1999 ? 0 : 150;
+  
+  const subtotal = items.reduce((acc, item) => {
+    // Safety check in case product is missing
+    const price = item.product?.price || 0; 
+    return acc + (price * item.quantity);
+  }, 0);
+
+
+  const shipping = subtotal < 1999 ? 100 : 0;
   const total = subtotal + shipping;
 
   // Redirect if cart empty
@@ -67,27 +72,24 @@ const Checkout: React.FC = () => {
     e.preventDefault();
     setErrorMsg('');
 
-    // 1. Load Script
     const isLoaded = await loadRazorpayScript();
     if (!isLoaded) {
       setErrorMsg('Razorpay SDK failed to load. Check your internet.');
       return;
     }
 
-    // 2. Create Order on Backend
     createOrderMutation.mutate(address, {
       onSuccess: (data) => {
-        // 3. Open Razorpay Modal
         const options = {
-          key: data.key, // Public Key from Backend
-          amount: data.amount,
+          key: data.key, 
+          amount: data.amount, // Amount in Paise from Backend
           currency: data.currency,
           name: "Amar Jyoti",
           description: "Purchase of Authentic Ethnic Wear",
-          image: "https://ik.imagekit.io/ikmedia/blog/hero-image.jpg", // Replace with your logo URL
+          // Use a static logo or the first product image
+          image: "https://ik.imagekit.io/ikmedia/blog/hero-image.jpg", 
           order_id: data.razorpayOrderId, 
           handler: function (response: any) {
-            // 4. Verify Payment on Success
             verifyPaymentMutation.mutate({
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
@@ -97,10 +99,10 @@ const Checkout: React.FC = () => {
           prefill: {
             name: user?.name,
             email: user?.email,
-            contact: "" // Optional: Add phone field to user model later
+            contact: "" 
           },
           theme: {
-            color: "#D4AF37" // Matches our Accent Color
+            color: "#D4AF37"
           }
         };
 
@@ -122,7 +124,7 @@ const Checkout: React.FC = () => {
           
           {/* Left: Shipping Form */}
           <div className="space-y-6">
-            <div className="bg-light p-6 rounded-xl shadow-(--shadow-soft)">
+            <div className="bg-light p-6 rounded-xl shadow-sm">
               <h2 className="text-xl font-serif mb-6 flex items-center">
                 <MapPin className="w-5 h-5 mr-2 text-accent" /> Shipping Address
               </h2>
@@ -178,7 +180,7 @@ const Checkout: React.FC = () => {
 
           {/* Right: Order Summary */}
           <div>
-             <div className="bg-light p-6 rounded-xl shadow-(--shadow-soft) sticky top-24">
+             <div className="bg-light p-6 rounded-xl shadow-sm sticky top-24">
               <h2 className="text-xl font-serif mb-6 flex items-center">
                 <ShieldCheck className="w-5 h-5 mr-2 text-accent" /> Order Summary
               </h2>
@@ -188,14 +190,23 @@ const Checkout: React.FC = () => {
                   <div key={item.productId} className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-secondary/10 rounded overflow-hidden">
-                        <img src={item.image} alt="" className="w-full h-full object-cover" />
+                        {/* 🟢 FIX 3: Access nested product image */}
+                        <img 
+                          src={item.product?.images?.[0] || 'https://via.placeholder.com/50'} 
+                          alt="" 
+                          className="w-full h-full object-cover" 
+                        />
                       </div>
                       <div>
-                        <p className="font-medium text-dark">{item.name}</p>
+                        {/* 🟢 FIX 4: Access nested product name */}
+                        <p className="font-medium text-dark">{item.product?.name}</p>
                         <p className="text-subtle-text">Qty: {item.quantity}</p>
                       </div>
                     </div>
-                    <span className="font-medium">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                    {/* 🟢 FIX 5: Access nested product price */}
+                    <span className="font-medium">
+                        ₹{( (item.product?.price || 0) * item.quantity).toLocaleString('en-IN')}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -207,7 +218,8 @@ const Checkout: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-subtle-text">
                   <span>Shipping</span>
-                  <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
+                  {/* Logic: Free if over 1999, else 100 */}
+                  <span>{subtotal >= 1999 ? 'Free' : '₹100'}</span>
                 </div>
                 <div className="flex justify-between font-serif text-lg text-dark pt-2 border-t border-dashed border-subtle-text/30 mt-2">
                   <span>Total to Pay</span>

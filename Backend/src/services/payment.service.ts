@@ -5,27 +5,35 @@ import crypto from 'crypto';
 
 // 1. Initiate Checkout (Create Pending Order)
 export const createOrder = async (userId: string, address: any) => {
-  // A. Fetch Cart (Trusted Source)
+  // A. Fetch Cart
   const cart = await cartService.getCart(userId);
   if (!cart || cart.items.length === 0) {
     throw new Error('Cart is empty');
   }
 
-  // B. Calculate Total (Server-side calculation)
-  let totalAmount = 0;
+  // B. Calculate Subtotal (Product Prices Only)
+  let subtotal = 0;
+  
+  // 🟢 We access item.product (which is populated)
   const orderItems = cart.items.map((item: any) => {
-    const price = item.product.price;
-    totalAmount += price * item.quantity;
+    // Explicitly grab price from the populated product object
+    const price = item.product.price; 
+    subtotal += price * item.quantity;
+    
     return {
-      product: item.product._id,
+      product: item.product._id, // Save just the ID in the Order
       quantity: item.quantity,
       price: price
     };
   });
 
+  // 🟢 Shipping Logic
+  const shippingCharge = subtotal < 1999 ? 100 : 0;
+  const totalAmount = subtotal + shippingCharge;
+
   // C. Create Razorpay Order
   const options = {
-    amount: totalAmount * 100, // Amount in paise (e.g., 500.00 -> 50000)
+    amount: totalAmount * 100, // Amount in paise
     currency: "INR",
     receipt: `receipt_${Date.now()}`
   };
@@ -53,7 +61,7 @@ export const createOrder = async (userId: string, address: any) => {
     razorpayOrderId: razorpayOrder.id,
     amount: totalAmount,
     currency: "INR",
-    key: process.env.RAZORPAY_KEY_ID // Send Public Key to Frontend
+    key: process.env.RAZORPAY_KEY_ID 
   };
 };
 
@@ -65,25 +73,21 @@ export const verifyPayment = async (
 ) => {
   const secret = process.env.RAZORPAY_KEY_SECRET || '';
 
-  // HMAC SHA256 Signature Verification
   const generated_signature = crypto
     .createHmac('sha256', secret)
     .update(razorpayOrderId + "|" + razorpayPaymentId)
     .digest('hex');
 
   if (generated_signature === signature) {
-    // A. Find Order
     const order = await Order.findOne({ 'paymentInfo.razorpayOrderId': razorpayOrderId });
     if (!order) throw new Error("Order not found");
 
-    // B. Update Status
     order.status = 'Placed';
     order.paymentInfo.razorpayPaymentId = razorpayPaymentId;
     await order.save();
 
-    // C. Clear User Cart (Since order is successful)
-    // Note: We need a method in cartService for this.
-    // await cartService.clearCart(order.user.toString()); 
+    // Clear cart after success
+    await cartService.clearCart(order.user.toString()); 
 
     return order;
   } else {
