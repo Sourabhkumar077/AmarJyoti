@@ -9,6 +9,7 @@ import Loader from './components/common/Loader';
 import { useAppSelector } from './store/hooks';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProductForm from './pages/admin/ProductForm';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Lazy Load Pages
 const Home = React.lazy(() => import('./pages/Home'));
@@ -55,6 +56,7 @@ function App() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <Router>
+          <ScrollToTop />
           <div className="flex flex-col min-h-screen bg-primary font-sans">
             <Navbar />
             <main className="grow">
