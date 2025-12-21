@@ -52,7 +52,7 @@ export const productSchema = z.object({
     category: z.string().length(24, "Invalid Category ID"),
     price: z.number().positive("Price must be positive"),
     stock: z.number().int().nonnegative("Stock cannot be negative"),
-    fabric: z.string().min(2).optional(), // Optional kar diya taaki empty na phate
+    fabric: z.string().min(2).optional(), 
     colors: z.array(z.string()).min(1, "At least one color is required"),
     images: z.array(z.string().url()).min(1, "At least one image URL is required"),
   }),
@@ -79,6 +79,8 @@ export const createOrderSchema = z.object({
     shippingAddress: z.object({
       street: z.string().min(5, "Street address is too short"),
       city: z.string().min(2, "City is required"),
+      state: z.string().min(2, "State is required"), 
+      country: z.string().optional().default("India"), 
       pincode: z.string().length(6, "Invalid Pincode"),
     }),
   }),

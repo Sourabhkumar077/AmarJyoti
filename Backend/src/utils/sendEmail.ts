@@ -16,7 +16,7 @@ const sendEmail = async (options: { email: string; subject: string; message: str
     to: options.email, // Receiver
     subject: options.subject,
     text: options.message, // Plain Text Version
-    // HTML Version (Optional - Sundar email ke liye)
+    // HTML Version 
     html: `
       <div style="font-family: serif; padding: 20px; background-color: #f9f9f9;">
         <div style="max-width: 600px; margin: 0 auto; background: white; padding: 20px; border: 1px solid #ddd;">

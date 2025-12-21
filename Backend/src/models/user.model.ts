@@ -3,16 +3,16 @@ import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
   name: string;
-  email?: string; // Optional
-  phone?: string; // Optional
+  email?: string; 
+  phone?: string; 
   password?: string;
   role: 'user' | 'admin';
   createdAt: Date;
   addresses: {
     street: string;
     city: string;
-    state: string;    // New
-    country: string;  // New
+    state: string;    
+    country: string;  
     pincode: string;
     isDefault: boolean;
   }[];

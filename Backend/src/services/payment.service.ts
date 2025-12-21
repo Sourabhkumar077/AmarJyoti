@@ -1,6 +1,8 @@
 import { razorpayInstance } from '../config/razorpay';
 import Order from '../models/order.model';
+import Product from '../models/product.model'; // Stock update ke liye
 import * as cartService from './cart.service';
+import sendEmail from '../utils/sendEmail'; // Email ke liye
 import crypto from 'crypto';
 
 // 1. Initiate Checkout (Create Pending Order)
@@ -14,7 +16,6 @@ export const createOrder = async (userId: string, address: any) => {
   // B. Calculate Subtotal (Product Prices Only)
   let subtotal = 0;
   
-  // 🟢 We access item.product (which is populated)
   const orderItems = cart.items.map((item: any) => {
     // Explicitly grab price from the populated product object
     const price = item.product.price; 
@@ -27,7 +28,7 @@ export const createOrder = async (userId: string, address: any) => {
     };
   });
 
-  // 🟢 Shipping Logic
+  // Shipping Logic
   const shippingCharge = subtotal < 1999 ? 100 : 0;
   const totalAmount = subtotal + shippingCharge;
 
@@ -65,7 +66,7 @@ export const createOrder = async (userId: string, address: any) => {
   };
 };
 
-// 2. Verify Payment (Signature Check)
+// 2. Verify Payment (Updated: Stock Update + Email)
 export const verifyPayment = async (
   razorpayOrderId: string, 
   razorpayPaymentId: string, 
@@ -79,15 +80,44 @@ export const verifyPayment = async (
     .digest('hex');
 
   if (generated_signature === signature) {
-    const order = await Order.findOne({ 'paymentInfo.razorpayOrderId': razorpayOrderId });
+    // 1. find order and populate the user
+    const order = await Order.findOne({ 'paymentInfo.razorpayOrderId': razorpayOrderId }).populate('user');
     if (!order) throw new Error("Order not found");
 
+    // 2. Status Update
     order.status = 'Placed';
     order.paymentInfo.razorpayPaymentId = razorpayPaymentId;
     await order.save();
 
-    // Clear cart after success
-    await cartService.clearCart(order.user.toString()); 
+    // 3. Stock Update (Inventory Management)
+  
+    for (const item of order.items) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: -item.quantity } 
+      });
+    }
+
+    // 4. Send Confirmation Email
+    
+    const userEmail = (order.user as any)?.email;
+    const userName = (order.user as any)?.name || "Customer";
+    
+    if (userEmail) {
+      const message = `Namaste ${userName},\n\nYour order #${order._id} has been successfully placed!\nTotal Amount: ₹${order.totalAmount}\n\nWe will notify you once it ships.\n\nThanks,\nAmar Jyoti Team`;
+      
+      try {
+        await sendEmail({
+          email: userEmail,
+          subject: "Order Confirmation - Amar Jyoti",
+          message: message
+        });
+      } catch (err) {
+        console.error("Email sending failed but order placed:", err);
+      }
+    }
+
+    // 5. Cart Clear karo
+    await cartService.clearCart((order.user as any)._id.toString()); 
 
     return order;
   } else {

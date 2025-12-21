@@ -10,7 +10,7 @@ const CategorySchema: Schema = new Schema({
     type: String, 
     required: true, 
     unique: true,
-    enum: ['Saree', 'Suit', 'Lehenga'] // Strictly limited as per requirement
+    enum: ['Saree', 'Suit', 'Lehenga'] // Strictly limited 
   },
   description: { type: String }
 });

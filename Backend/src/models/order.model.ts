@@ -5,12 +5,14 @@ export interface IOrder extends Document {
   items: {
     product: mongoose.Types.ObjectId;
     quantity: number;
-    price: number; // Snapshot of price at time of purchase
+    price: number;
   }[];
   totalAmount: number;
   shippingAddress: {
     street: string;
     city: string;
+    state: string;
+    country: string; 
     pincode: string;
   };
   status:
@@ -46,6 +48,8 @@ const OrderSchema: Schema = new Schema(
     shippingAddress: {
       street: { type: String, required: true },
       city: { type: String, required: true },
+      state: { type: String, required: true }, 
+      country: { type: String, default: "India" }, 
       pincode: { type: String, required: true },
     },
     status: {
@@ -68,7 +72,6 @@ const OrderSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-// Index for fetching user orders and admin filtering
 OrderSchema.index({ user: 1, status: 1 });
 
 export default mongoose.model<IOrder>("Order", OrderSchema);
