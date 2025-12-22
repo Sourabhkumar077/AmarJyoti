@@ -2,148 +2,97 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { MapPin, ShieldCheck, Lock, CreditCard } from 'lucide-react';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { clearCart } from '../store/slices/cartSlice';
+import { useAppSelector } from '../store/hooks'; // Note: dispatch ki jarurat nahi hai yahan
 import apiClient from '../api/client';
-import { loadRazorpayScript } from '../utils/loadRazorpay';
-
-// 👇 1. Library Import karein
 import { State, City } from 'country-state-city';
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const { items } = useAppSelector((state) => state.cart);
-  const { user } = useAppSelector((state) => state.auth);
 
   // Form State
   const [address, setAddress] = useState({
     street: '',
     city: '',
     state: '',
-    country: 'India', // Default Country Name
+    country: 'India', // Default Fixed
     pincode: ''
   });
 
-  
+  // Location Data States
   const [allStates, setAllStates] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);
-  const [selectedStateCode, setSelectedStateCode] = useState(''); 
-
+  const [selectedStateCode, setSelectedStateCode] = useState('');
+  
   const [errorMsg, setErrorMsg] = useState('');
 
-
+  // 1. Initial Load: Get States & Check Cart
   useEffect(() => {
-    const statesOfIndia = State.getStatesOfCountry('IN');
-    setAllStates(statesOfIndia);
-  }, []);
+    // Load all states of India
+    const states = State.getStatesOfCountry('IN');
+    setAllStates(states);
 
-  // Calculation Logic (Same as before)
+    // Redirect if cart is empty
+    if (items.length === 0) {
+      navigate('/cart');
+    }
+  }, [items, navigate]);
+
+  // 2. Calculate Totals
   const subtotal = items.reduce((acc, item) => {
     const price = item.product?.price || 0; 
     return acc + (price * item.quantity);
   }, 0);
+
   const shipping = subtotal < 1999 ? 100 : 0;
   const total = subtotal + shipping;
 
-  useEffect(() => {
-    if (items.length === 0) navigate('/cart');
-  }, [items, navigate]);
-
+  // 3. Handle State Selection -> Populate Cities
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const stateCode = e.target.value; // Yeh 'MH', 'DL', 'UP' jesa code hoga
+    const stateCode = e.target.value;
     const stateObj = allStates.find(s => s.isoCode === stateCode);
     
+    // UI ke liye name set karein, Logic ke liye code
     setAddress({ ...address, state: stateObj?.name || '', city: '' });
-    
     setSelectedStateCode(stateCode);
 
+    // Fetch cities for this state
     const cities = City.getCitiesOfState('IN', stateCode);
     setAllCities(cities);
   };
 
-  // API 1: Create Order
+  // 4. API Mutation: Create Order & Redirect to PhonePe
   const createOrderMutation = useMutation({
     mutationFn: async (shippingData: any) => {
-      const payload = {
-        street: shippingData.street,
-        city: shippingData.city,
-        state: shippingData.state,      
-        country: shippingData.country,
-        pincode: shippingData.pincode
-      };
-      const res = await apiClient.post('/payment/order', { shippingAddress: payload });
-      return res.data;
+      // Backend ko address bhejo
+      const res = await apiClient.post('/payment/order', { shippingAddress: shippingData });
+      return res.data; // Backend returns { url: "https://phonepe..." }
+    },
+    onSuccess: (data) => {
+      // User ko PhonePe Payment Page par bhej do
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setErrorMsg("Invalid response from server");
+      }
+    },
+    onError: (err: any) => {
+      setErrorMsg(err.response?.data?.message || "Could not initiate payment. Try again.");
     }
   });
 
-  // API 2: Verify Payment
-  const verifyPaymentMutation = useMutation({
-    mutationFn: async (paymentData: any) => {
-      const res = await apiClient.post('/payment/verify', paymentData);
-      return res.data;
-    },
-    onSuccess: () => {
-      dispatch(clearCart());
-      navigate('/order-success');
-    },
-    onError: () => {
-      setErrorMsg("Payment verification failed. Please contact support.");
-    }
-  });
-
-  const handlePayment = async (e: React.FormEvent) => {
+  // 5. Handle Form Submit
+  const handlePayment = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
+    // Basic Validation
     if (!address.street || !address.city || !address.state || !address.pincode) {
       setErrorMsg("Please fill in all address fields.");
       return;
     }
 
-    const isLoaded = await loadRazorpayScript();
-    if (!isLoaded) {
-      setErrorMsg('Razorpay SDK failed to load. Check your internet.');
-      return;
-    }
-
-    createOrderMutation.mutate(address, {
-      onSuccess: (data) => {
-        const options = {
-          key: data.key, 
-          amount: data.amount, 
-          currency: data.currency,
-          name: "Amar Jyoti",
-          description: "Ethnic Wear Purchase",
-          image: "https://ik.imagekit.io/ikmedia/blog/hero-image.jpg", 
-          order_id: data.razorpayOrderId, 
-          handler: function (response: any) {
-            verifyPaymentMutation.mutate({
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature
-            });
-          },
-          prefill: {
-            name: user?.name,
-            email: user?.email,
-            contact: "" 
-          },
-          theme: { color: "#D4AF37" }
-        };
-        const paymentObject = new window.Razorpay(options);
-        paymentObject.open();
-      },
-      onError: (err: any) => {
-        setErrorMsg(err.response?.data?.message || "Could not initiate order.");
-      }
-    });
+    createOrderMutation.mutate(address);
   };
 
   return (
@@ -153,7 +102,7 @@ const Checkout: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
-          {/* Left: Shipping Form */}
+          {/* === LEFT: ADDRESS FORM === */}
           <div className="space-y-6">
             <div className="bg-light p-8 rounded-xl shadow-sm border border-subtle-text/10">
               <h2 className="text-xl font-serif mb-6 flex items-center">
@@ -162,7 +111,7 @@ const Checkout: React.FC = () => {
 
               <form id="checkout-form" onSubmit={handlePayment} className="space-y-5">
                 
-                {/* Country (Fixed to India for now, easier for logic) */}
+                {/* Country (Read Only) */}
                 <div>
                   <label className="block text-sm font-medium text-dark mb-1">Country</label>
                   <input 
@@ -186,9 +135,9 @@ const Checkout: React.FC = () => {
                   />
                 </div>
 
-                {/* State & City Row */}
+                {/* State & City Dropdowns */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* State Dropdown - Populated from Library */}
+                  {/* State */}
                   <div>
                     <label className="block text-sm font-medium text-dark mb-1">State</label>
                     <select 
@@ -206,7 +155,7 @@ const Checkout: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* City Dropdown - Populated based on State */}
+                  {/* City */}
                   <div>
                     <label className="block text-sm font-medium text-dark mb-1">City</label>
                     <select 
@@ -245,21 +194,22 @@ const Checkout: React.FC = () => {
               </form>
             </div>
 
-            {/* Error Message */}
+            {/* Error Message Display */}
             {errorMsg && (
-              <div className="bg-red-50 text-error p-4 rounded-md text-sm border border-red-200">
+              <div className="bg-red-50 text-error p-4 rounded-md text-sm border border-red-200 animate-fade-in-up">
                 {errorMsg}
               </div>
             )}
           </div>
 
-          {/* Right: Order Summary (Same as before) */}
+          {/* === RIGHT: ORDER SUMMARY === */}
           <div>
              <div className="bg-light p-8 rounded-xl shadow-sm border border-subtle-text/10 sticky top-24">
               <h2 className="text-xl font-serif mb-6 flex items-center">
                 <ShieldCheck className="w-5 h-5 mr-2 text-accent" /> Order Summary
               </h2>
 
+              {/* Items List */}
               <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {items.map(item => (
                   <div key={item.productId} className="flex justify-between items-center text-sm">
@@ -283,6 +233,7 @@ const Checkout: React.FC = () => {
                 ))}
               </div>
 
+              {/* Price Breakdown */}
               <div className="border-t border-subtle-text/10 pt-4 space-y-2 text-sm">
                 <div className="flex justify-between text-subtle-text">
                   <span>Subtotal</span>
@@ -301,23 +252,24 @@ const Checkout: React.FC = () => {
                 </div>
               </div>
 
+              {/* Payment Button */}
               <button 
                 type="submit" 
                 form="checkout-form"
-                disabled={createOrderMutation.isPending || verifyPaymentMutation.isPending}
-                className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-3.5 rounded-lg transition-colors mt-6 flex justify-center items-center gap-2 shadow-lg shadow-accent/20"
+                disabled={createOrderMutation.isPending}
+                className="w-full bg-accent hover:bg-yellow-600 text-white font-bold py-3.5 rounded-lg transition-colors mt-6 flex justify-center items-center gap-2 shadow-lg shadow-accent/20"
               >
-                {(createOrderMutation.isPending || verifyPaymentMutation.isPending) ? (
+                {createOrderMutation.isPending ? (
                   'Processing...'
                 ) : (
                   <>
-                    <CreditCard className="w-5 h-5" /> Pay with Razorpay
+                    <CreditCard className="w-5 h-5" /> Pay with PhonePe
                   </>
                 )}
               </button>
               
               <div className="mt-4 flex items-center justify-center text-xs text-subtle-text gap-1">
-                <Lock className="w-3 h-3" /> Secure 256-bit SSL encrypted payment
+                <Lock className="w-3 h-3" /> Secure Payment via PhonePe Gateway
               </div>
             </div>
           </div>

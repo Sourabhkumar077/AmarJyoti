@@ -86,11 +86,10 @@ export const createOrderSchema = z.object({
   }),
 });
 
+// Verify Payment Schema (PhonePe)
 export const verifyPaymentSchema = z.object({
   body: z.object({
-    razorpayOrderId: z.string(),
-    razorpayPaymentId: z.string(),
-    signature: z.string(),
+    merchantTransactionId: z.string().min(1, "Transaction ID is required"),
   }),
 });
 

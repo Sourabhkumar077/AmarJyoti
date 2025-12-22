@@ -10,6 +10,7 @@ import { useAppSelector } from './store/hooks';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProductForm from './pages/admin/ProductForm';
 import ScrollToTop from './components/common/ScrollToTop';
+import PaymentVerify from './pages/PaymentVerify';
 
 // Lazy Load Pages
 const Home = React.lazy(() => import('./pages/Home'));
@@ -74,6 +75,9 @@ function App() {
 
                   {/* Protected User Routes */}
                   <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+                  <Route path="/payment/verify" element={
+                    <ProtectedRoute><PaymentVerify /></ProtectedRoute>
+                  } />
                   <Route path="/order-success" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
                   <Route path="/account" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 

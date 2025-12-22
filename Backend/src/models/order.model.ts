@@ -12,19 +12,13 @@ export interface IOrder extends Document {
     street: string;
     city: string;
     state: string;
-    country: string; 
+    country: string;
     pincode: string;
   };
-  status:
-    | "Pending"
-    | "Placed"
-    | "Packed"
-    | "Shipped"
-    | "Delivered"
-    | "Cancelled";
+  status: "Pending" | "Placed" | "Packed" | "Shipped" | "Delivered" | "Cancelled";
   paymentInfo: {
-    razorpayOrderId: string;
-    razorpayPaymentId?: string;
+    transactionId: string; 
+    paymentId?: string;    // Changed from razorpayPaymentId (Provider Ref ID)
   };
   createdAt: Date;
   updatedAt: Date;
@@ -35,11 +29,7 @@ const OrderSchema: Schema = new Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     items: [
       {
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
-          required: true,
-        },
+        product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
       },
@@ -48,30 +38,22 @@ const OrderSchema: Schema = new Schema(
     shippingAddress: {
       street: { type: String, required: true },
       city: { type: String, required: true },
-      state: { type: String, required: true }, 
-      country: { type: String, default: "India" }, 
+      state: { type: String, required: true },
+      country: { type: String, default: 'India' },
       pincode: { type: String, required: true },
     },
     status: {
       type: String,
-      enum: [
-        "Pending",
-        "Placed",
-        "Packed",
-        "Shipped",
-        "Delivered",
-        "Cancelled",
-      ],
+      enum: ["Pending", "Placed", "Packed", "Shipped", "Delivered", "Cancelled"],
       default: "Pending",
     },
     paymentInfo: {
-      razorpayOrderId: { type: String, required: true },
-      razorpayPaymentId: { type: String },
+      transactionId: { type: String, required: true },
+      paymentId: { type: String },
     },
   },
   { timestamps: true }
 );
 
 OrderSchema.index({ user: 1, status: 1 });
-
 export default mongoose.model<IOrder>("Order", OrderSchema);

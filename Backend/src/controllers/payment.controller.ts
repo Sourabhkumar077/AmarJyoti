@@ -14,32 +14,24 @@ export const createOrderHandler = async (req: Request, res: Response) => {
     const { shippingAddress } = req.body;
     const userId = getUserId(req);
 
-    // Call service to calculate total and get Razorpay ID
-    const orderData = await paymentService.createOrder(userId, shippingAddress);
-
-    res.status(200).json(orderData);
+    // Get Redirect URL
+    const result = await paymentService.createOrder(userId, shippingAddress);
+    res.status(200).json(result); // { url: "..." }
   } catch (error: any) {
-    if (error.message === 'Cart is empty') {
-      return res.status(400).json({ message: "Cannot place order with empty cart" });
-    }
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
 // 2. Verify Payment
 export const verifyPaymentHandler = async (req: Request, res: Response) => {
   try {
-    const { razorpayOrderId, razorpayPaymentId, signature } = req.body;
-    const userId = getUserId(req);
-
-    // Verify Signature
-    const order = await paymentService.verifyPayment(razorpayOrderId, razorpayPaymentId, signature);
+    const { merchantTransactionId } = req.body;
     
-    // If successful, clear the cart
-    await cartService.clearCart(userId);
-
+    // Check Status with PhonePe
+    const order = await paymentService.verifyPayment(merchantTransactionId);
+    
     res.status(200).json({ 
-      message: "Payment verified and Order Placed", 
+      message: "Payment Verified", 
       orderId: order._id 
     });
   } catch (error: any) {
