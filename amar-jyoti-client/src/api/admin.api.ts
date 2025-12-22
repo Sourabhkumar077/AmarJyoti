@@ -13,20 +13,37 @@ export interface DashboardStats {
   }[];
 }
 
-export interface Order {
+// Detailed Order Interface for Admin
+export interface AdminOrder {
   _id: string;
-  user: { name: string; email: string };
+  user: { 
+    name: string; 
+    email: string;
+    phone?: string;
+  };
+  items: {
+    product: {
+      _id: string;
+      name: string;
+      images: string[];
+      price: number;
+    };
+    quantity: number;
+    price: number;
+  }[];
   totalAmount: number;
-  status:
-    | "Pending"
-    | "Placed"
-    | "Packed"
-    | "Shipped"
-    | "Delivered"
-    | "Cancelled";
+  status: "Pending" | "Placed" | "Packed" | "Shipped" | "Delivered" | "Cancelled";
   createdAt: string;
   shippingAddress: {
+    street: string;
     city: string;
+    state: string;
+    country: string;
+    pincode: string;
+  };
+  paymentInfo?: {
+    transactionId: string;
+    paymentId?: string;
   };
 }
 
@@ -36,10 +53,10 @@ export const fetchDashboardStats = async () => {
   return response.data;
 };
 
-// Fetch All Orders
+// Fetch All Orders (Using new Type)
 export const fetchAllOrders = async (status?: string) => {
   const params = status ? `?status=${status}` : "";
-  const response = await apiClient.get<Order[]>(`/admin/orders${params}`);
+  const response = await apiClient.get<AdminOrder[]>(`/admin/orders${params}`);
   return response.data;
 };
 
