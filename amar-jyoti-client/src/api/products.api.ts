@@ -15,6 +15,9 @@ export interface Product {
   colors: string[];
   images: string[];
   isActive: boolean;
+  // 👇 Added these fields for Reviews
+  ratings?: number;
+  numOfReviews?: number;
 }
 
 interface ProductFilters {
@@ -29,7 +32,6 @@ export interface Category {
 }
 
 export const fetchProducts = async (filters: ProductFilters): Promise<Product[]> => {
-  // Build query string manually or using URLSearchParams
   const params = new URLSearchParams();
   
   if (filters.category) params.append('category', filters.category);
@@ -37,9 +39,7 @@ export const fetchProducts = async (filters: ProductFilters): Promise<Product[]>
   if (filters.maxPrice) params.append('max', filters.maxPrice.toString());
   if (filters.sortBy) params.append('sortBy', filters.sortBy);
 
-  // Calls: http://localhost:5000/api/v1/products?category=Saree&...
   const response = await apiClient.get<{ products: Product[] }>(`/products?${params.toString()}`);
-  
   return response.data.products;
 };
 
@@ -48,7 +48,6 @@ export const fetchProductById = async (id: string): Promise<Product> => {
   return response.data;
 };
 
-// to fetch categories
 export const fetchCategories = async () => {
   const response = await apiClient.get<Category[]>('/categories');
   return response.data;

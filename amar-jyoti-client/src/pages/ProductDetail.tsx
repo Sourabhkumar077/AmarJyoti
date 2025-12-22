@@ -1,192 +1,270 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // useNavigate add kiya
-import { useQuery } from '@tanstack/react-query';
-import { Star, ShoppingCart, Truck, RefreshCw, ShieldCheck, Minus, Plus, AlertCircle } from 'lucide-react';
-import apiClient from '../api/client';
-import Loader from '../components/common/Loader';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ShoppingCart, Star, Trash2, User, Edit3 } from 'lucide-react'; 
+import { fetchProductById } from '../api/products.api';
+import { fetchProductReviews, addReview, deleteReview, updateReview } from '../api/reviews.api'; 
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addToCartAsync, addToCartLocal } from '../store/slices/cartSlice';
+import { addToCartLocal, addToCartAsync } from '../store/slices/cartSlice';
+import Loader from '../components/common/Loader';
+import toast from 'react-hot-toast'; 
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const { user } = useAppSelector((state) => state.auth);
-  
-  const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(0);
 
-  const { data: product, isLoading, error } = useQuery({
+  const [selectedImage, setSelectedImage] = useState(0);
+  
+  // Review Form State
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null); 
+
+  // Fetch Product
+  const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['product', id],
-    queryFn: async () => {
-      // Safety: Agar ID nahi hai to error phenko
-      if (!id) throw new Error("Invalid Product ID");
-      const response = await apiClient.get(`/products/${id}`);
-      return response.data;
+    queryFn: () => fetchProductById(id!),
+    enabled: !!id,
+  });
+
+  // Fetch Reviews
+  const { data: reviews, isLoading: reviewsLoading } = useQuery({
+    queryKey: ['reviews', id],
+    queryFn: () => fetchProductReviews(id!),
+    enabled: !!id,
+  });
+
+  // Create Review Mutation
+  const createMutation = useMutation({
+    mutationFn: (data: { rating: number, comment: string }) => addReview(id!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reviews', id] });
+      queryClient.invalidateQueries({ queryKey: ['product', id] }); // Refresh avg rating
+      setComment('');
+      setRating(5);
+      toast.success("Review added successfully! 🎉"); 
     },
-    enabled: !!id, // Jab tak ID na mile, query mat चलाओ
+    onError: (err: any) => toast.error(err.response?.data?.message || "Failed to add review")
+  });
+
+  // Update Review Mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: { rating: number, comment: string }) => updateReview(editingReviewId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reviews', id] });
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      setComment('');
+      setRating(5);
+      setEditingReviewId(null); // Exit edit mode
+      toast.success("Review updated successfully! ✏️"); 
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || "Failed to update review")
+  });
+
+  // Delete Review Mutation
+  const deleteMutation = useMutation({
+    mutationFn: (reviewId: string) => deleteReview(reviewId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reviews', id] });
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      toast.success("Review deleted."); 
+    },
+    onError: () => toast.error("Could not delete review.")
   });
 
   const handleAddToCart = () => {
-    if (!product) return;
-
-    if (user) {
-      // Logged In User
-      dispatch(addToCartAsync({ productId: product._id, quantity }));
-      // Optional: Toast message show karo
-    } else {
-      // Guest User
-      dispatch(addToCartLocal({
-        product: product,
-        productId: product._id,
-        quantity: quantity,
-        _id: Date.now().toString()
-      }));
-      // Optional: Toast message show karo
+    if (product) {
+      if (user) {
+        dispatch(addToCartAsync({ productId: product._id, quantity: 1 }));
+      } else {
+        dispatch(addToCartLocal({ productId: product._id, quantity: 1, product: product }));
+      }
+      toast.success("Added to Cart 🛒");
     }
-    // UX: Cart me add hone ke baad user ko feedback do
-    alert("Item added to cart!");
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
-    navigate('/cart');
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (editingReviewId) {
+      updateMutation.mutate({ rating, comment });
+    } else {
+      createMutation.mutate({ rating, comment });
+    }
   };
 
-  if (isLoading) return <Loader />;
+  // Populate Form for Editing
+  const handleEditClick = (rev: any) => {
+    setRating(rev.rating);
+    setComment(rev.comment);
+    setEditingReviewId(rev._id);
+    // Scroll to form (optional)
+    document.getElementById('review-form')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-  if (error || !product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
-        <AlertCircle className="w-12 h-12 text-subtle-text" />
-        <h2 className="text-xl font-serif text-dark">Product not found</h2>
-        <button onClick={() => navigate('/products')} className="text-accent hover:underline">
-          Browse all products
-        </button>
-      </div>
-    );
-  }
+  const handleCancelEdit = () => {
+    setEditingReviewId(null);
+    setRating(5);
+    setComment('');
+  };
 
-  // Safety check for images
-  const images = product.images && product.images.length > 0 ? product.images : ['https://via.placeholder.com/400'];
+  if (productLoading) return <Loader />;
+  if (!product) return <div className="text-center py-20">Product not found</div>;
 
   return (
-    <div className="bg-primary/30 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 p-6 md:p-8">
-          
-          {/* Image Gallery */}
+    <div className="bg-primary/10 min-h-screen py-10">
+      <div className="container mx-auto px-4 md:px-8">
+        
+        {/* Product Info Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white p-6 rounded-xl shadow-sm mb-10">
           <div className="space-y-4">
-            <div className="aspect-3/4 rounded-xl overflow-hidden bg-gray-100 relative group">
-              <img 
-                src={images[selectedImage]} 
-                alt={product.name} 
-                className="w-full h-full object-cover"
-              />
+            <div className="aspect-3/4 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+               <img src={product.images[selectedImage]} alt={product.name} className="w-full h-full object-cover" />
             </div>
-            {/* Thumbnails */}
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {images.map((img: string, idx: number) => (
-                <button 
-                  key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`w-20 h-24 shrink-0 rounded-md overflow-hidden border-2 transition-all ${selectedImage === idx ? 'border-accent' : 'border-transparent hover:border-subtle-text/30'}`}
-                >
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {product.images.map((img: string, idx: number) => (
+                <button key={idx} onClick={() => setSelectedImage(idx)} className={`w-20 h-20 rounded-md overflow-hidden border-2 shrink-0 ${selectedImage === idx ? 'border-accent' : 'border-transparent'}`}>
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Product Info */}
-          <div className="flex flex-col h-full">
-            <div className="mb-1">
-              <span className="text-sm font-medium text-accent tracking-wider uppercase">
-                {product.category?.name || 'Ethnic Wear'}
-              </span>
+          <div className="space-y-6">
+            <h1 className="text-3xl font-serif text-dark">{product.name}</h1>
+            <div className="flex items-center gap-2">
+               <div className="flex text-yellow-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`w-4 h-4 ${i < (product.ratings || 0) ? 'fill-current' : 'text-gray-300'}`} />
+                  ))}
+               </div>
+               <span className="text-sm text-subtle-text">({product.numOfReviews || 0} Reviews)</span>
             </div>
+            <p className="text-2xl font-bold text-accent">₹{product.price.toLocaleString('en-IN')}</p>
+            <p className="text-gray-600 leading-relaxed">{product.description}</p>
+            <div className="pt-6 border-t border-gray-100">
+               <button onClick={handleAddToCart} className="w-full md:w-auto px-8 py-3 bg-dark text-white rounded-md hover:bg-black transition flex items-center justify-center gap-2 shadow-lg">
+                 <ShoppingCart className="w-5 h-5" /> Add to Cart
+               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-subtle-text/10">
+          <h2 className="text-2xl font-serif font-bold text-dark mb-8">Customer Reviews</h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             
-            <h1 className="text-3xl md:text-4xl font-serif text-dark mb-4 leading-tight">
-              {product.name}
-            </h1>
-
-            <div className="flex items-center gap-4 mb-6">
-              <span className="text-2xl font-bold text-dark">₹{product.price?.toLocaleString('en-IN')}</span>
-              {/* Fake Rating for UI */}
-              <div className="flex items-center gap-1 text-yellow-500 text-sm bg-yellow-50 px-2 py-1 rounded">
-                <Star className="w-4 h-4 fill-current" />
-                <span className="font-medium">4.8</span>
-                <span className="text-subtle-text ml-1">(120 Reviews)</span>
-              </div>
+            {/* Reviews List */}
+            <div className="space-y-6 max-h-150 overflow-y-auto pr-2 custom-scrollbar">
+              {reviewsLoading ? <Loader /> : reviews?.length === 0 ? (
+                <p className="text-subtle-text italic">No reviews yet. Be the first to review!</p>
+              ) : (
+                reviews?.map((rev) => (
+                  <div key={rev._id} className={`border-b border-gray-100 pb-6 last:border-0 relative group transition-colors ${editingReviewId === rev._id ? 'bg-accent/5 p-4 rounded-lg' : ''}`}>
+                    <div className="flex items-center gap-3 mb-2">
+                       <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center text-accent font-bold">
+                         {rev.user?.name?.charAt(0).toUpperCase() || <User className="w-5 h-5"/>}
+                       </div>
+                       <div>
+                          <p className="font-bold text-sm text-dark">{rev.user?.name || "Anonymous"}</p>
+                          <div className="flex text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`w-3 h-3 ${i < rev.rating ? 'fill-current' : 'text-gray-200'}`} />
+                            ))}
+                          </div>
+                       </div>
+                       <span className="ml-auto text-xs text-subtle-text">{new Date(rev.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-gray-600 text-sm pl-12">{rev.comment}</p>
+                    
+                    {/* Action Buttons */}
+                    <div className="absolute top-0 right-0 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm p-1 rounded">
+                      {/* Edit Button (Only Owner) */}
+                      {user?._id === rev.user?._id && (
+                        <button onClick={() => handleEditClick(rev)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded" title="Edit">
+                           <Edit3 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {/* Delete Button (Owner OR Admin) */}
+                      {(user?.role === 'admin' || user?._id === rev.user?._id) && (
+                        <button onClick={() => { if(confirm("Delete this review?")) deleteMutation.mutate(rev._id); }} className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded" title="Delete">
+                           <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
-            <p className="text-subtle-text mb-8 leading-relaxed">
-              {product.description}
-            </p>
+            {/* Review Form */}
+            <div className="h-fit sticky top-24">
+               <div id="review-form" className="bg-gray-50 p-6 rounded-lg border border-gray-100">
+                 <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-dark">{editingReviewId ? 'Edit Your Review' : 'Write a Review'}</h3>
+                    {editingReviewId && (
+                      <button onClick={handleCancelEdit} className="text-xs text-red-500 hover:underline">Cancel Edit</button>
+                    )}
+                 </div>
+                 
+                 {!user ? (
+                   <div className="text-center py-6">
+                      <p className="text-sm text-gray-500 mb-4">Please login to write a review.</p>
+                      <button onClick={() => navigate('/login')} className="text-accent underline font-medium">Login Now</button>
+                   </div>
+                 ) : (
+                   <form onSubmit={handleSubmitReview} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Rating</label>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button 
+                              type="button" 
+                              key={star} 
+                              onClick={() => setRating(star)}
+                              className={`p-1 transition-transform hover:scale-110 ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                            >
+                              <Star className={`w-6 h-6 ${rating >= star ? 'fill-current' : ''}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-            {/* Quantity & Actions */}
-            <div className="space-y-6 mt-auto">
-              <div className="flex items-center gap-4">
-                <span className="font-medium text-dark">Quantity:</span>
-                <div className="flex items-center border border-subtle-text/20 rounded-md">
-                  <button 
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="p-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className="w-12 text-center font-medium">{quantity}</span>
-                  <button 
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                    className="p-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <span className="text-sm text-subtle-text">
-                  {product.stock > 0 ? `${product.stock} items in stock` : 'Out of stock'}
-                </span>
-              </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Your Comment</label>
+                        <textarea 
+                          required
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          className="w-full p-3 border rounded-md focus:border-accent outline-none min-h-25"
+                          placeholder="How was the product quality and fit?"
+                        ></textarea>
+                      </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <button 
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0}
-                  className="btn-secondary py-4 flex items-center justify-center gap-2"
-                >
-                  <ShoppingCart className="w-5 h-5" /> Add to Cart
-                </button>
-                <button 
-                  onClick={handleBuyNow}
-                  disabled={product.stock <= 0}
-                  className="btn-primary py-4 flex items-center justify-center gap-2"
-                >
-                  Buy Now
-                </button>
-              </div>
-
-              {/* Features */}
-              <div className="grid grid-cols-3 gap-4 py-6 border-t border-subtle-text/10">
-                <div className="flex flex-col items-center text-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                    <Truck className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-medium text-dark">Free Shipping</span>
-                </div>
-                <div className="flex flex-col items-center text-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                    <RefreshCw className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-medium text-dark">Easy Returns</span>
-                </div>
-                <div className="flex flex-col items-center text-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-medium text-dark">Secure Payment</span>
-                </div>
-              </div>
+                      <button 
+                        type="submit" 
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                        className="w-full bg-accent text-white py-2 rounded-md hover:bg-yellow-600 transition shadow-md"
+                      >
+                        {editingReviewId 
+                          ? (updateMutation.isPending ? 'Updating...' : 'Update Review') 
+                          : (createMutation.isPending ? 'Submitting...' : 'Submit Review')
+                        }
+                      </button>
+                   </form>
+                 )}
+               </div>
             </div>
+
           </div>
         </div>
       </div>

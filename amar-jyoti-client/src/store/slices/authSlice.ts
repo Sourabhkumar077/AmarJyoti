@@ -2,10 +2,10 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
 interface User {
-  id: string;
+  _id: string; 
   name: string;
-  email?: string; // Optional
-  phone?: string; // New Optional
+  email?: string;
+  phone?: string;
   role: 'user' | 'admin';
   addresses?: {
     street: string;
@@ -23,7 +23,6 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-// Check Local Storage for existing session
 const storedToken = localStorage.getItem('token');
 const storedUser = localStorage.getItem('user');
 
