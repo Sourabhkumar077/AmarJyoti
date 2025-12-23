@@ -11,6 +11,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import ProductForm from './pages/admin/ProductForm';
 import ScrollToTop from './components/common/ScrollToTop';
 import PaymentVerify from './pages/PaymentVerify';
+import AdminReviews from './pages/admin/AdminReviews';
 
 // Lazy Load Pages
 const Home = React.lazy(() => import('./pages/Home'));
@@ -86,9 +87,10 @@ function App() {
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<Dashboard />} />
                       <Route path="orders" element={<AdminOrders />} />
-                      <Route path="products" element={<AdminProducts />} /> {/* New */}
-                      <Route path="products/new" element={<ProductForm />} /> {/* New */}
-                      <Route path="products/edit/:id" element={<ProductForm />} /> {/* New */}
+                      <Route path="products" element={<AdminProducts />} /> 
+                      <Route path="products/new" element={<ProductForm />} /> 
+                      <Route path="products/edit/:id" element={<ProductForm />} /> 
+                      <Route path="reviews" element={<AdminReviews />} />
                     </Route>
                   </Route>
 

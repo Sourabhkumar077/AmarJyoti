@@ -37,3 +37,8 @@ export const deleteReview = async (reviewId: string) => {
   const response = await apiClient.delete(`/reviews/${reviewId}`);
   return response.data;
 };
+// admin fetch all reviews
+export const fetchAllReviews = async () => {
+  const response = await apiClient.get<any[]>('/reviews/admin/all');
+  return response.data;
+};

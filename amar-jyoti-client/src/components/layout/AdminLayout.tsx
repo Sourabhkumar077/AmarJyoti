@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, ShoppingBag, Star } from 'lucide-react';
 import { useAppDispatch } from '../../store/hooks';
 import { logout } from '../../store/slices/authSlice';
 
@@ -32,6 +32,10 @@ const AdminLayout: React.FC = () => {
           <Link to="/admin/products" className={`flex items-center px-4 py-3 rounded-md transition-colors ${isActive('/admin/products')}`}>
             <ShoppingBag className="w-5 h-5 mr-3" /> {/* Use ShoppingBag icon */}
             Products
+          </Link>
+          <Link to="/admin/reviews" className={`flex items-center px-4 py-3 rounded-md transition-colors ${isActive('/admin/reviews')}`}>
+            <Star className="w-5 h-5 mr-3" />
+            Reviews
           </Link>
         </nav>
 

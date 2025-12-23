@@ -128,3 +128,17 @@ export const updateReviewHandler = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// 6. Get All Reviews (Admin Only) - 👇 NEW FUNCTION
+export const getAllReviewsHandler = async (req: Request, res: Response) => {
+  try {
+    const reviews = await Review.find({})
+      .populate('user', 'name email')       // User ka naam aur email dikhane ke liye
+      .populate('product', 'name images')   // Product ki photo aur naam ke liye
+      .sort({ createdAt: -1 });             // Latest review sabse upar
+      
+    res.status(200).json(reviews);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

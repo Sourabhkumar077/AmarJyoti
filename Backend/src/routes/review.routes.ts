@@ -4,9 +4,10 @@ import {
   deleteReviewHandler, 
   getProductReviewsHandler,
   getMyReviewsHandler,
-  updateReviewHandler
+  updateReviewHandler,
+  getAllReviewsHandler
 } from '../controllers/review.controller';
-import { protect } from '../middlewares/auth.middleware';
+import { protect, adminOnly } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -18,5 +19,8 @@ router.post('/product/:productId', protect, createReviewHandler);
 router.get('/my-reviews', protect, getMyReviewsHandler);
 router.delete('/:id', protect, deleteReviewHandler); // Checks ownership inside controller
 router.put('/:id', protect, updateReviewHandler);
+
+// Admin only 
+router.get('/admin/all', protect, adminOnly, getAllReviewsHandler);
 
 export default router;
