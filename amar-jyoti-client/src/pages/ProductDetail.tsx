@@ -77,12 +77,24 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = () => {
     if (product) {
+      if(product.stock <= 0) {
+        toast.error("This product is currently out of stock.");
+        return;
+      }
+
       if (user) {
         dispatch(addToCartAsync({ productId: product._id, quantity: 1 }));
       } else {
         dispatch(addToCartLocal({ productId: product._id, quantity: 1, product: product }));
       }
-      toast.success("Added to Cart 🛒");
+      
+      // ✨ Success 
+      toast.success(
+        <div className='flex items-center gap-2'>
+           <span>Added to Cart!</span>
+           <button onClick={() => navigate('/cart')} className='text-xs font-bold underline ml-2 text-indigo-600'>View Cart</button>
+        </div>
+      );
     }
   };
 
@@ -121,7 +133,7 @@ const ProductDetail: React.FC = () => {
   return (
     <div className="bg-primary/10 min-h-screen py-10">
       <div className="container mx-auto px-4 md:px-8">
-        
+      
         {/* Product Info Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white p-6 rounded-xl shadow-sm mb-10">
           <div className="space-y-4">

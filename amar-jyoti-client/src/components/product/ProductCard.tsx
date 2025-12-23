@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addToCartAsync, addToCartLocal } from '../../store/slices/cartSlice';
+import toast from 'react-hot-toast';
 
 interface ProductCardProps {
   product: any;
@@ -13,24 +14,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { user } = useAppSelector((state) => state.auth);
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Link click prevent karega
+    e.preventDefault();
     e.stopPropagation();
 
     if (user) {
       // ✅ User Logged In -> Backend Call
       dispatch(addToCartAsync({ productId: product._id, quantity: 1 }));
-      // Optional: Add Toast Notification here
+      toast.success(`${product.name.substring(0, 15)}... added to cart! 🛒`)
+      
     } else {
       // ✅ Guest User -> Local Storage
-      // Backend jaisa structure bana rahe hain local ke liye
       dispatch(addToCartLocal({
         product: product, 
         productId: product._id,
         quantity: 1,
         _id: Date.now().toString() // Temp ID
       }));
-      // Optional: Add Toast Notification here
-      alert("Added to guest cart");
+      
+      toast.success(`${product.name.substring(0, 15)}... added to cart! `);
     }
   };
 
