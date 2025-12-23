@@ -1,59 +1,124 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-
-// Dummy data or fetch via API with sort=createdAt
-const arrivals = [
-  { id: 1, img: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&q=80", name: "Banarasi Red" },
-  { id: 2, img: "https://images.unsplash.com/photo-1583391733958-e0295c29272e?w=400&q=80", name: "Royal Blue Silk" },
-  { id: 3, img: "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&q=80", name: "Golden Zari" },
-  { id: 4, img: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&q=80", name: "Pink Lehenga" },
-  { id: 5, img: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&q=80", name: "Cotton Suit" },
-];
+import React, { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchProducts } from '../../api/products.api';
+import ProductCard from '../product/ProductCard';
+import Loader from './Loader';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const NewArrivals: React.FC = () => {
+  const navigate = useNavigate();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Fetch Products
+  const { data: products, isLoading } = useQuery({
+    queryKey: ['newArrivals'],
+    queryFn: () => fetchProducts({ sortBy: 'newest' }),
+  });
+
+  // Duplicate products for infinite loop effect
+  const displayProducts = products ? [...products.slice(0, 8), ...products.slice(0, 8)] : [];
+
+  // Auto Scroll Logic
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    let scrollSpeed = 1; // Default Desktop Speed
+
+    // 📱 Phone me speed badhane ke liye
+    if (window.innerWidth < 768) {
+      scrollSpeed = 2; // Faster on Mobile
+    }
+
+    const scroll = () => {
+      // Agar user mouse upar rakha hai, to auto-scroll rok do
+      if (isHovered) return;
+
+      if (scrollContainer.scrollLeft >= scrollContainer.scrollWidth / 2) {
+        // Reset to start instantly for infinite effect
+        scrollContainer.scrollLeft = 0;
+      } else {
+        scrollContainer.scrollLeft += scrollSpeed;
+      }
+    };
+
+    const intervalId = setInterval(scroll, 20); // Run every 20ms
+
+    return () => clearInterval(intervalId);
+  }, [isHovered, products]);
+
+  // Button Handlers
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
+
+  if (isLoading) return <Loader />;
+
   return (
-    <section className="py-20 bg-white overflow-hidden">
-      <div className="container mb-10 flex justify-between items-end">
+    <section className="py-16 bg-white relative group">
+      <div className="container mx-auto px-4 mb-8 flex justify-between items-end">
         <div>
-           <span className="text-accent text-sm font-bold tracking-widest uppercase">Just In</span>
-           <h2 className="text-3xl font-serif text-dark mt-2">New Arrivals</h2>
+           <h2 className="text-3xl md:text-4xl font-serif font-bold text-dark mb-2">New Arrivals</h2>
+           <p className="text-subtle-text">Discover our latest ethnic collections.</p>
         </div>
-        <Link to="/products?sort=newest" className="hidden md:block text-subtle-text hover:text-accent transition-colors">View All &rarr;</Link>
+        <button 
+           onClick={() => navigate('/category/all')} 
+           className="hidden md:flex items-center gap-2 text-accent font-medium hover:text-yellow-600 transition"
+        >
+           View All <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Infinite Scroll Container */}
-      <div className="relative w-full">
-        <div className="flex gap-6 animate-scroll whitespace-nowrap px-4 hover:pause">
-           {/* Duplicate array for seamless loop */}
-           {[...arrivals, ...arrivals].map((item, index) => (
-             <Link to="/products" key={`${item.id}-${index}`} className="min-w-62.5 md:min-w-75 group">
-                <div className="aspect-3/4 overflow-hidden rounded-lg mb-4 bg-gray-100">
-                  <img 
-                    src={item.img} 
-                    alt={item.name} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    loading="lazy"
-                  />
-                </div>
-                <h3 className="font-serif text-lg text-dark">{item.name}</h3>
-                <span className="text-sm text-subtle-text">Shop Now</span>
-             </Link>
+      <div className="relative container mx-auto px-4">
+        
+        {/* Left Button */}
+        <button 
+          onClick={scrollLeft}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 p-3 rounded-full shadow-md hover:bg-white text-dark hidden group-hover:block transition-all"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+
+        {/* Scrollable Container */}
+        <div 
+          ref={scrollRef}
+          className="flex gap-6 overflow-x-auto hide-scrollbar scroll-smooth"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+           {displayProducts.map((product, index) => (
+             <div key={`${product._id}-${index}`} className="w-64 md:w-72 shrink-0">
+               <ProductCard product={product} />
+             </div>
            ))}
         </div>
+
+        {/* Right Button */}
+        <button 
+          onClick={scrollRight}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 p-3 rounded-full shadow-md hover:bg-white text-dark hidden group-hover:block transition-all"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+
       </div>
-      
-      <style>{`
-        .animate-scroll {
-          animation: scroll 30s linear infinite;
-        }
-        .hover\\:pause:hover {
-          animation-play-state: paused;
-        }
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
+
+      <div className="mt-8 text-center md:hidden">
+         <button onClick={() => navigate('/category/all')} className="inline-flex items-center gap-2 text-accent font-medium">
+            View All Collection <ArrowRight className="w-4 h-4" />
+         </button>
+      </div>
+
     </section>
   );
 };

@@ -12,6 +12,9 @@ import ProductForm from './pages/admin/ProductForm';
 import ScrollToTop from './components/common/ScrollToTop';
 import PaymentVerify from './pages/PaymentVerify';
 import AdminReviews from './pages/admin/AdminReviews';
+import ShippingPolicy from './pages/ShippingPolicy';
+import Returns from './pages/Returns';
+import Contact from './pages/Contact';
 
 // Lazy Load Pages
 const Home = React.lazy(() => import('./pages/Home'));
@@ -73,6 +76,9 @@ function App() {
                   <Route path="/register" element={<Register />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                  <Route path="/returns" element={<Returns />} />
+                  <Route path="/contact" element={<Contact />} />
 
                   {/* Protected User Routes */}
                   <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
@@ -87,9 +93,9 @@ function App() {
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<Dashboard />} />
                       <Route path="orders" element={<AdminOrders />} />
-                      <Route path="products" element={<AdminProducts />} /> 
-                      <Route path="products/new" element={<ProductForm />} /> 
-                      <Route path="products/edit/:id" element={<ProductForm />} /> 
+                      <Route path="products" element={<AdminProducts />} />
+                      <Route path="products/new" element={<ProductForm />} />
+                      <Route path="products/edit/:id" element={<ProductForm />} />
                       <Route path="reviews" element={<AdminReviews />} />
                     </Route>
                   </Route>

@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, Truck, Star } from "lucide-react";
+import { ArrowRight} from "lucide-react";
 import NewArrivals from "../components/common/NewArrivals";
 import LocationSection from "../components/common/LocationSection";
+import ServicesSection from '../components/common/ServicesSection';
 
 const Home: React.FC = () => {
   // Animation variants for staggered reveal
@@ -178,44 +179,8 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* Trust Factors */}
-      <section className="py-16 bg-primary/30 border-t border-accent/10">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center text-center p-6 bg-white rounded-xl shadow-sm border border-accent/5">
-              <div className="w-12 h-12 bg-secondary/30 rounded-full flex items-center justify-center text-accent mb-4">
-                <Star className="w-6 h-6" />
-              </div>
-              <h4 className="font-serif text-xl mb-2">Premium Quality</h4>
-              <p className="text-sm text-subtle-text">
-                Hand-checked fabrics ensuring the finest authentic ethnic wear.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center p-6 bg-white rounded-xl shadow-sm border border-accent/5">
-              <div className="w-12 h-12 bg-secondary/30 rounded-full flex items-center justify-center text-accent mb-4">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <h4 className="font-serif text-xl mb-2">Secure Payments</h4>
-              <p className="text-sm text-subtle-text">
-                100% safe transactions powered by Razorpay standard security.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center p-6 bg-white rounded-xl shadow-sm border border-accent/5">
-              <div className="w-12 h-12 bg-secondary/30 rounded-full flex items-center justify-center text-accent mb-4">
-                <Truck className="w-6 h-6" />
-              </div>
-              <h4 className="font-serif text-xl mb-2">Fast Delivery</h4>
-              <p className="text-sm text-subtle-text">
-                Express shipping across India with live order tracking.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
       <NewArrivals />
+      <ServicesSection />
       <LocationSection />
     </motion.div>
   );
