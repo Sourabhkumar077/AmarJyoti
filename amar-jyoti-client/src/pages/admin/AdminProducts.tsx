@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { fetchAdminProducts, deleteProduct } from '../../api/admin.api';
 import Loader from '../../components/common/Loader';
 import type { Product } from '../../api/products.api';
+import toast from 'react-hot-toast';
 
 const AdminProducts: React.FC = () => {
   const queryClient = useQueryClient();
@@ -19,7 +20,11 @@ const AdminProducts: React.FC = () => {
     mutationFn: deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
-    }
+      toast.success("Product deleted successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to delete product"); // 👈 Toast
+    },
   });
 
   const handleDelete = (id: string) => {

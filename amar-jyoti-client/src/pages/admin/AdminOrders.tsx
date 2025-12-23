@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchAllOrders, updateOrderStatus, type AdminOrder } from '../../api/admin.api';
 import Loader from '../../components/common/Loader';
 import { Eye, X, Package, MapPin, Smartphone } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const statusColors: Record<string, string> = {
   'Pending': 'bg-yellow-100 text-yellow-800',
@@ -28,7 +29,9 @@ const AdminOrders: React.FC = () => {
     mutationFn: ({ id, status }: { id: string, status: string }) => updateOrderStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
-    }
+      toast.success(`Order status updated to ${status}`);
+    },
+    onError: () => toast.error("Failed to update status")
   });
 
   if (isLoading) return <Loader />;

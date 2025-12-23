@@ -27,7 +27,7 @@ const ResetPassword: React.FC = () => {
             const response = await apiClient.post('/auth/reset-password', data);
             return response.data;
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             setSuccessMsg("Password reset successfully! Redirecting to login...");
             setTimeout(() => {
                 navigate('/login');

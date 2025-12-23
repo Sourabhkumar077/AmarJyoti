@@ -5,6 +5,7 @@ import { MapPin, ShieldCheck, Lock, CreditCard } from 'lucide-react';
 import { useAppSelector } from '../store/hooks'; // Note: dispatch ki jarurat nahi hai yahan
 import apiClient from '../api/client';
 import { State, City } from 'country-state-city';
+import toast from 'react-hot-toast';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const Checkout: React.FC = () => {
   const [allCities, setAllCities] = useState<any[]>([]);
   const [selectedStateCode, setSelectedStateCode] = useState('');
   
-  const [errorMsg, setErrorMsg] = useState('');
+  // const [errorMsg, setErrorMsg] = useState('');
 
   // 1. Initial Load: Get States & Check Cart
   useEffect(() => {
@@ -34,6 +35,7 @@ const Checkout: React.FC = () => {
 
     // Redirect if cart is empty
     if (items.length === 0) {
+      toast.error("Cart is empty");
       navigate('/cart');
     }
   }, [items, navigate]);
@@ -52,7 +54,6 @@ const Checkout: React.FC = () => {
     const stateCode = e.target.value;
     const stateObj = allStates.find(s => s.isoCode === stateCode);
     
-    // UI ke liye name set karein, Logic ke liye code
     setAddress({ ...address, state: stateObj?.name || '', city: '' });
     setSelectedStateCode(stateCode);
 
@@ -64,31 +65,31 @@ const Checkout: React.FC = () => {
   // 4. API Mutation: Create Order & Redirect to PhonePe
   const createOrderMutation = useMutation({
     mutationFn: async (shippingData: any) => {
-      // Backend ko address bhejo
+      // send address to backend
       const res = await apiClient.post('/payment/order', { shippingAddress: shippingData });
       return res.data; // Backend returns { url: "https://phonepe..." }
     },
     onSuccess: (data) => {
-      // User ko PhonePe Payment Page par bhej do
+    
       if (data.url) {
         window.location.href = data.url;
       } else {
-        setErrorMsg("Invalid response from server");
+        toast.error("Invalid response from server");
       }
     },
     onError: (err: any) => {
-      setErrorMsg(err.response?.data?.message || "Could not initiate payment. Try again.");
+      toast.error(err.response?.data?.message || "Could not initiate payment. Try again.");
     }
   });
 
   // 5. Handle Form Submit
   const handlePayment = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    toast.error('');
 
     // Basic Validation
     if (!address.street || !address.city || !address.state || !address.pincode) {
-      setErrorMsg("Please fill in all address fields.");
+      toast.error("Please fill in all address fields.");
       return;
     }
 
@@ -194,12 +195,7 @@ const Checkout: React.FC = () => {
               </form>
             </div>
 
-            {/* Error Message Display */}
-            {errorMsg && (
-              <div className="bg-red-50 text-error p-4 rounded-md text-sm border border-red-200 animate-fade-in-up">
-                {errorMsg}
-              </div>
-            )}
+           
           </div>
 
           {/* === RIGHT: ORDER SUMMARY === */}

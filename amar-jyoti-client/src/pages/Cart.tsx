@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { fetchCart } from '../store/slices/cartSlice'; // Sirf fetch import karo, baaki CartItem handle karega
-import CartItem from '../components/cart/CartItem'; // Ensure path is correct
+import { fetchCart } from '../store/slices/cartSlice'; 
+import CartItem from '../components/cart/CartItem'; 
+
 
 const Cart: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -18,7 +19,6 @@ const Cart: React.FC = () => {
     if (user) {
       dispatch(fetchCart());
     }
-    // Guest user ke liye data pehle se state me hai (initialState se)
   }, [dispatch, user]);
 
   // Calculate Totals safely

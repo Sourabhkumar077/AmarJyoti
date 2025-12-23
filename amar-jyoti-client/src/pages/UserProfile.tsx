@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   User, Package, MapPin, LogOut, ChevronRight, 
@@ -97,7 +97,7 @@ const UserProfile = () => {
             </div>
 
             <div className="bg-light rounded-xl shadow-sm overflow-hidden border border-subtle-text/10">
-              {/* 👇 Sidebar se Admin Button hata diya gaya hai */}
+             
               <button onClick={() => setActiveTab('orders')} className={`w-full flex items-center justify-between p-4 transition-colors ${activeTab === 'orders' ? 'bg-accent/10 text-accent font-medium border-l-4 border-accent' : 'text-subtle-text hover:bg-gray-50'}`}>
                 <div className="flex items-center gap-3"><Package className="w-5 h-5" /> My Orders</div><ChevronRight className="w-4 h-4" />
               </button>

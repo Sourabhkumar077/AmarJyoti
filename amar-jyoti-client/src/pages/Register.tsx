@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Lock, User, AlertCircle, Phone } from 'lucide-react'; // Phone icon added
+import { Mail, Lock, User,  Phone } from 'lucide-react'; // Phone icon added
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
+import toast from 'react-hot-toast';
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState(''); // New State
+  const [phone, setPhone] = useState(''); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
 
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -28,6 +28,7 @@ const Register: React.FC = () => {
         user: data.user,
         token: data.token
       }));
+      toast.success("Account created successfully! 🎉");
       
       if (redirectTarget === 'checkout') {
         navigate('/checkout');
@@ -36,26 +37,26 @@ const Register: React.FC = () => {
       }
     },
     onError: (error: any) => {
-      setErrorMsg(error.response?.data?.message || 'Registration failed.');
+      toast.error(error.response?.data?.message || "Registration failed");
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters");
+      toast.error("Password must be at least 6 characters");
       return;
     }
     // Phone Validation (Simple check)
     if (phone.length < 10) {
-      setErrorMsg("Please enter a valid phone number");
+       toast.error("Please enter a valid phone number");
       return;
     }
     const payload = {
       name,
       phone,
       password,
-      ...(email.trim() !== '' && { email: email.trim() }) // Sirf tab add karo jab email me kuch likha ho
+      ...(email.trim() !== '' && { email: email.trim() }) 
     };
 
     // Payload to send 
@@ -73,12 +74,7 @@ const Register: React.FC = () => {
           </p>
         </div>
 
-        {errorMsg && (
-          <div className="bg-red-50 border border-red-200 text-error px-4 py-3 rounded-md flex items-center text-sm">
-            <AlertCircle className="w-4 h-4 mr-2" />
-            {errorMsg}
-          </div>
-        )}
+      
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
@@ -121,14 +117,14 @@ const Register: React.FC = () => {
 
             {/* Email Field (Optional) */}
             <div>
-              <label className="block text-sm font-medium text-dark mb-1">Email Address (Optional)</label>
+              <label className="block text-sm font-medium text-dark mb-1">Email Address </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-subtle-text/50" />
                 </div>
                 <input
                   type="email"
-                  // required <-- Removed required
+                  required
                   className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm"
                   placeholder="you@example.com"
                   value={email}

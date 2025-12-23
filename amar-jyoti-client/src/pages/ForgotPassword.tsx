@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import {  ArrowRight, AlertCircle, Smartphone, ArrowLeft } from 'lucide-react';
+import {  ArrowRight,  Smartphone, ArrowLeft } from 'lucide-react';
 import apiClient from '../api/client';
+import toast from 'react-hot-toast';
 
 
 const ForgotPassword: React.FC = () => {
     const [identifier, setIdentifier] = useState('');
-    const [errorMsg, setErrorMsg] = useState('');
+   
     const navigate = useNavigate();
 
     const mutation = useMutation({
@@ -19,17 +20,17 @@ const ForgotPassword: React.FC = () => {
             // Success hone par Reset Password page par bhejenge
             // Saath me identifier bhi pass kar rahe hain taaki wahan dobara na dalna pade
             navigate('/reset-password', { state: { identifier } });
-            alert(data.message || "OTP sent successfully! Check your console/phone.");
+            toast.success(data.message || "OTP sent to your email! 📧")
         },
         onError: (error: any) => {
-            setErrorMsg(error.response?.data?.message || 'Something went wrong.');
+            toast.error(error.response?.data?.message || "Failed to send email");
             console.log(error);   
         }
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!identifier) return;
+        if (!identifier) return toast.error("Please enter email or phone");
         mutation.mutate({ identifier });
     };
 
@@ -44,12 +45,7 @@ const ForgotPassword: React.FC = () => {
                     </p>
                 </div>
 
-                {errorMsg && (
-                    <div className="bg-red-50 border border-red-200 text-error px-4 py-3 rounded-md flex items-center text-sm">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        {errorMsg}
-                    </div>
-                )}
+                
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div>

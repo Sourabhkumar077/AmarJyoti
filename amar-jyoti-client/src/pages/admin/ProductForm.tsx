@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createProduct, updateProduct, uploadImage } from '../../api/admin.api'; // Added uploadImage
-import { ArrowLeft, Save, UploadCloud, X, Loader2 } from 'lucide-react'; // Added icons
+import { createProduct, updateProduct, uploadImage } from '../../api/admin.api';
+import { ArrowLeft, Save, UploadCloud, X, Loader2 } from 'lucide-react'; 
 import { fetchProductById, fetchCategories } from '../../api/products.api';
+import toast from 'react-hot-toast';
 
 const ProductForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -83,10 +84,11 @@ const ProductForm: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      toast.success(`Product ${isEditMode ? 'updated' : 'created'} successfully! 🎉`);
       navigate('/admin/products');
     },
     onError: (err: any) => {
-      alert("Failed to save product: " + (err.response?.data?.message || err.message));
+      toast.error(err.response?.data?.message || "Operation failed");
     }
   });
 
@@ -100,9 +102,10 @@ const ProductForm: React.FC = () => {
       const data = await uploadImage(file);
       // Save the URL returned from backend to the form state
       setFormData(prev => ({ ...prev, [fieldName]: data.url }));
+      toast.success("Image uploaded!");
     } catch (error) {
       console.error(error);
-      alert("Image upload failed. Please try again.");
+      toast.error("Image upload failed");
     } finally {
       setIsUploading(false);
     }
@@ -111,7 +114,7 @@ const ProductForm: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.image1) {
-      alert("Please upload at least one main image.");
+      toast.error("Please upload at least one main image.");
       return;
     }
     mutation.mutate(formData);
@@ -141,7 +144,7 @@ const ProductForm: React.FC = () => {
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
-            {/* --- CHANGED: CATEGORY DROPDOWN --- */}
+            {/* --- CATEGORY DROPDOWN --- */}
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
               <select
@@ -209,7 +212,7 @@ const ProductForm: React.FC = () => {
             </div>
           </div>
 
-          {/* --- NEW IMAGE UPLOADER SECTION --- */}
+          {/* ---  IMAGE UPLOADER SECTION --- */}
           <div className="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300">
             <h3 className="text-sm font-medium mb-4 flex items-center text-dark">
               <UploadCloud className="w-4 h-4 mr-2" /> Product Images

@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Lock, ArrowRight, AlertCircle, Smartphone } from 'lucide-react';
+import { Lock, ArrowRight,  Smartphone } from 'lucide-react';
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
 
 import { mergeGuestCart, fetchCart } from '../store/slices/cartSlice';
+import toast from 'react-hot-toast';
 
 const Login: React.FC = () => {
 
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
-    const [errorMsg, setErrorMsg] = useState('');
+    // const [errorMsg, setErrorMsg] = useState('');
 
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
@@ -30,6 +31,7 @@ const Login: React.FC = () => {
                 user: data.user,
                 token: data.token
             }));
+            toast.success(`Welcome back, ${data.user.name}! 👋`);
 
             const localCart = localStorage.getItem('guest_cart');
             if (localCart) {
@@ -50,13 +52,16 @@ const Login: React.FC = () => {
             }
         },
         onError: (error: any) => {
-            setErrorMsg(error.response?.data?.message || 'Login failed. Please check your credentials.');
+            toast.error(error.response?.data?.message || "Login failed. Please check credentials.");
         }
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!identifier || !password) return;
+        if (!identifier || !password) {
+            toast.error("Please fill in all fields");
+            return;
+        }
         loginMutation.mutate({ identifier, password });
     };
 
@@ -72,13 +77,13 @@ const Login: React.FC = () => {
                     </p>
                 </div>
 
-                {/* Error Alert */}
+                {/* Error Alert
                 {errorMsg && (
                     <div className="bg-red-50 border border-red-200 text-error px-4 py-3 rounded-md flex items-center text-sm">
                         <AlertCircle className="w-4 h-4 mr-2" />
                         {errorMsg}
                     </div>
-                )}
+                )} */}
 
                 {/* Form */}
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
