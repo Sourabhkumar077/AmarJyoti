@@ -35,5 +35,8 @@ const ProductSchema: Schema = new Schema(
 
 // CRITICAL INDEX: Optimizes "Filter by Category + Sort by Price" 
 ProductSchema.index({ category: 1, price: 1 });
+ProductSchema.index({ fabric: 1 });
+ProductSchema.index({ colors: 1 });
+ProductSchema.index({ createdAt: -1 });
 
 export default mongoose.model<IProduct>('Product', ProductSchema);

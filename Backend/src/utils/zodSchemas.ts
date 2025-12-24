@@ -108,3 +108,12 @@ export const updateOrderStatusSchema = z.object({
     }),
   }),
 });
+
+// Schema for Reviews
+export const reviewSchema = z.object({
+  body: z.object({
+    rating: z.number().int().min(1, "Rating must be at least 1").max(5, "Rating cannot be more than 5"),
+    comment: z.string().optional().default(''),
+    productId: z.string().length(24, "Invalid Product ID"),
+  }),
+});

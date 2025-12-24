@@ -12,6 +12,7 @@ import categoryRoutes from './routes/category.routes';
 import orderRoutes from './routes/order.routes';
 import reviewRoutes from './routes/review.routes';
 import compression from 'compression';
+import ApiError from './utils/ApiError';
 
 const app: Application = express();
 
@@ -21,7 +22,7 @@ app.use(cookieParser());
 app.use(compression());
 app.use(helmet()); // Security headers 
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: process.env.CLIENT_URL || "http://localhost:5174",
     credentials: true
 }));
 
@@ -41,10 +42,25 @@ app.get('/', (req: Request, res: Response) => {
     res.status(200).json({ message: "Amar Jyoti API is running", status: "OK" });
 });
 
-// Global Error Handler Stub [cite: 26]
+// Global Error Handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error(err.stack);
-    res.status(500).json({ message: "Internal Server Error" });
+    let error = err;
+    if (!(error instanceof ApiError)) {
+        const statusCode = (error as any).statusCode || 500;
+        const message = error.message || 'Internal Server Error';
+        error = new ApiError(statusCode, message, false, err.stack);
+    }
+
+    const {
+        statusCode,
+        message
+    } = error as ApiError;
+
+    res.status(statusCode).json({
+        status: 'error',
+        message,
+        ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    });
 });
 
 export default app;

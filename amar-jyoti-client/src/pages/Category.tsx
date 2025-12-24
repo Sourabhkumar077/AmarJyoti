@@ -11,11 +11,11 @@ const Category: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('newest');
 
   // React Query Hook
-  const { data: products, isLoading, isError } = useQuery({
+  const { data: products, isLoading, isError, error } = useQuery({
     queryKey: ['products', categoryParam, sortBy],
-    queryFn: () => fetchProducts({ 
-      category: categoryParam || undefined, 
-      sortBy 
+    queryFn: () => fetchProducts({
+      category: categoryParam || undefined,
+      sortBy
     }),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });

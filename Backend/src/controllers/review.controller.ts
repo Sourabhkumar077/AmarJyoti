@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { Request, Response } from 'express';
 import mongoose from 'mongoose'; // 👈 Import Mongoose
 import Review from '../models/review.model';
@@ -51,7 +52,8 @@ export const createReviewHandler = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "Review added successfully" });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -63,7 +65,8 @@ export const getProductReviewsHandler = async (req: Request, res: Response) => {
       .sort({ createdAt: -1 });
     res.status(200).json(reviews);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -88,7 +91,8 @@ export const deleteReviewHandler = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "Review deleted" });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -98,7 +102,8 @@ export const getMyReviewsHandler = async (req: Request, res: Response) => {
     const reviews = await Review.find({ user: req.user?._id }).populate('product', 'name images');
     res.status(200).json(reviews);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -125,7 +130,8 @@ export const updateReviewHandler = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "Review updated successfully" });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -139,6 +145,7 @@ export const getAllReviewsHandler = async (req: Request, res: Response) => {
       
     res.status(200).json(reviews);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error);
+    res.status(500).json({ message: "Server Error" });
   }
 };

@@ -1,3 +1,4 @@
+import { logger } from './utils/logger';
 import app from './app';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -10,18 +11,19 @@ const MONGO_URI = process.env.MONGO_URI || "";
 const startServer = async () => {
     try {
         if (!MONGO_URI) {
-            throw new Error("MONGO_URI is missing in env variables");
+            logger.error("MONGO_URI is missing in env variables");
+            process.exit(1);
         }
         
         // Connect to MongoDB Atlas [cite: 10]
         await mongoose.connect(MONGO_URI);
-        console.log("✅ Connected to MongoDB Atlas");
+        logger.info("✅ Connected to MongoDB Atlas");
 
         app.listen(PORT, () => {
-            console.log(`🚀 Server running on port ${PORT}`);
+            logger.info(`🚀 Server running on port ${PORT}`);
         });
     } catch (error) {
-        console.error("❌ Database connection failed", error);
+        logger.error(error, "❌ Database connection failed");
         process.exit(1);
     }
 };

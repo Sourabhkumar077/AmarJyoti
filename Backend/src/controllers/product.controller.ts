@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { Request, Response } from 'express';
 import * as productService from '../services/product.service';
 
@@ -11,7 +12,8 @@ export const createProductHandler = async (req: Request, res: Response) => {
       product
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error creating product");
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -25,7 +27,8 @@ export const getProductsHandler = async (req: Request, res: Response) => {
       products
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error creating product");
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -38,7 +41,8 @@ export const getProductByIdHandler = async (req: Request, res: Response) => {
     if (error.message === 'Product not found') {
       return res.status(404).json({ message: "Product not found" });
     }
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error creating product");
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -53,7 +57,8 @@ export const deleteProductHandler = async (req: Request, res: Response) => {
     if (error.message === 'Product not found') {
       return res.status(404).json({ message: "Product not found" });
     }
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error creating product");
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -70,6 +75,7 @@ export const updateProductHandler = async (req: Request, res: Response) => {
     if (error.message === 'Product not found') {
       return res.status(404).json({ message: "Product not found" });
     }
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error creating product");
+    res.status(500).json({ message: "Server Error" });
   }
 };
