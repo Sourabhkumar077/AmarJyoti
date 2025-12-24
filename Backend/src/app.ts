@@ -11,12 +11,14 @@ import uploadRoutes from './routes/upload.routes';
 import categoryRoutes from './routes/category.routes';
 import orderRoutes from './routes/order.routes';
 import reviewRoutes from './routes/review.routes';
+import compression from 'compression';
 
 const app: Application = express();
 
 // Middleware [cite: 66]
 app.use(express.json());
 app.use(cookieParser());
+app.use(compression());
 app.use(helmet()); // Security headers 
 app.use(cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",

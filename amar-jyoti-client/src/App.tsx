@@ -1,20 +1,14 @@
 import React, { Suspense } from 'react'; // <--- FIXED: Must be at the top
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { store } from './store/store';
+
+
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Loader from './components/common/Loader';
 import { useAppSelector } from './store/hooks';
-import AdminProducts from './pages/admin/AdminProducts';
-import ProductForm from './pages/admin/ProductForm';
+import { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/common/ScrollToTop';
-import PaymentVerify from './pages/PaymentVerify';
-import AdminReviews from './pages/admin/AdminReviews';
-import ShippingPolicy from './pages/ShippingPolicy';
-import Returns from './pages/Returns';
-import Contact from './pages/Contact';
 
 // Lazy Load Pages
 const Home = React.lazy(() => import('./pages/Home'));
@@ -31,17 +25,15 @@ const UserProfile = React.lazy(() => import('./pages/UserProfile'));
 const AdminLayout = React.lazy(() => import('./components/layout/AdminLayout'));
 const Dashboard = React.lazy(() => import('./pages/admin/Dashboard'));
 const AdminOrders = React.lazy(() => import('./pages/admin/AdminOrders'));
+const Contact  = React.lazy(()=>import('./pages/Contact'));
+const Returns  = React.lazy(()=>import('./pages/Returns'));
+const ShippingPolicy  = React.lazy(()=>import('./pages/ShippingPolicy'));
+const AdminReviews  = React.lazy(()=>import('./pages/admin/AdminReviews'));
+const PaymentVerify  = React.lazy(()=>import('./pages/PaymentVerify'));
+const ProductForm = React.lazy(()=>import('./pages/admin/ProductForm'));
+const AdminProducts = React.lazy(()=>import('./pages/admin/AdminProducts'));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes tak data purana nahi manega (Refetch nahi karega)
-      gcTime: 1000 * 60 * 10,   // 10 minutes tak cache me rakhega
-      retry: 1,                 // Fail hone par sirf 1 baar retry karega (Fast fail)
-      refetchOnWindowFocus: false, // Window tab change karne par refetch band
-    },
-  },
-});
+
 
 // Protected Route Component (User)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -58,10 +50,9 @@ const AdminRoute = () => {
 
 function App() {
   return (
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
         <Router>
           <ScrollToTop />
+          <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 3000 }} />
           <div className="flex flex-col min-h-screen bg-primary font-sans">
             <Navbar />
             <main className="grow">
@@ -108,8 +99,7 @@ function App() {
             <Footer />
           </div>
         </Router>
-      </QueryClientProvider>
-    </Provider>
+    
   );
 }
 

@@ -72,7 +72,7 @@ const NewArrivals: React.FC = () => {
            <p className="text-subtle-text">Discover our latest ethnic collections.</p>
         </div>
         <button 
-           onClick={() => navigate('/category/all')} 
+           onClick={() => navigate('/products')} 
            className="hidden md:flex items-center gap-2 text-accent font-medium hover:text-yellow-600 transition"
         >
            View All <ArrowRight className="w-4 h-4" />
