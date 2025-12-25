@@ -9,36 +9,49 @@ export interface Review {
   createdAt: string;
 }
 
-// Fetch Reviews for a Product
+// Helper interface for Backend Response Structure
+interface ApiResponse<T> {
+  statusCode: number;
+  data: T;
+  message: string;
+  success: boolean;
+}
+
+// 1. Fetch Reviews for a Product
 export const fetchProductReviews = async (productId: string) => {
-  const response = await apiClient.get<Review[]>(`/reviews/product/${productId}`);
-  return response.data;
+  // We define the return type as ApiResponse containing Review[]
+  const response = await apiClient.get<ApiResponse<Review[]>>(`/reviews/product/${productId}`);
+  
+  // ✅ THE FIX: Return response.data.data (The Array) instead of response.data (The Wrapper)
+  return response.data.data; 
 };
 
-// Add Review
+// 2. Add Review
 export const addReview = async (productId: string, data: { rating: number, comment: string }) => {
-  const response = await apiClient.post(`/reviews/product/${productId}`, data);
-  return response.data;
+  const response = await apiClient.post<ApiResponse<Review>>(`/reviews/product/${productId}`, data);
+  return response.data.data;
 };
-// edit & update reviews
+
+// 3. Edit & Update Review
 export const updateReview = async (reviewId: string, data: { rating: number, comment: string }) => {
-  const response = await apiClient.put(`/reviews/${reviewId}`, data);
-  return response.data;
+  const response = await apiClient.put<ApiResponse<Review>>(`/reviews/${reviewId}`, data);
+  return response.data.data;
 };
 
-// Get My Reviews
+// 4. Get My Reviews
 export const fetchMyReviews = async () => {
-  const response = await apiClient.get<Review[]>('/reviews/my-reviews');
-  return response.data;
+  const response = await apiClient.get<ApiResponse<Review[]>>('/reviews/my-reviews');
+  return response.data.data;
 };
 
-// Delete Review
+// 5. Delete Review
 export const deleteReview = async (reviewId: string) => {
-  const response = await apiClient.delete(`/reviews/${reviewId}`);
-  return response.data;
+  const response = await apiClient.delete<ApiResponse<null>>(`/reviews/${reviewId}`);
+  return response.data.data;
 };
-// admin fetch all reviews
+
+// 6. Admin Fetch All Reviews
 export const fetchAllReviews = async () => {
-  const response = await apiClient.get<any[]>('/reviews/admin/all');
-  return response.data;
+  const response = await apiClient.get<ApiResponse<any[]>>('/reviews/admin/all');
+  return response.data.data;
 };

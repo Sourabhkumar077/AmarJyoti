@@ -1,6 +1,10 @@
 import React, { Suspense } from 'react'; // <--- FIXED: Must be at the top
 
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useEffect } from 'react'
+import { useAppDispatch } from './store/hooks';
+import { fetchUserProfile } from './store/slices/authSlice'; 
+
 
 
 import Navbar from './components/layout/Navbar';
@@ -49,6 +53,17 @@ const AdminRoute = () => {
 };
 
 function App() {
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    // Check karein ki token hai ya nahi
+    const token = localStorage.getItem('token'); // Ya jahan bhi aap token rakhte ho
+    if (token) {
+      // Agar token hai, to backend se user data mangao
+      // Note: Aapke authSlice mein 'fetchUserProfile' ya 'loadUser' action hona chahiye
+      dispatch(fetchUserProfile()); 
+    }
+  }, [dispatch]);
+  
   return (
         <Router>
           <ScrollToTop />
