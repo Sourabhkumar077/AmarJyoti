@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { Request, Response } from 'express';
 import * as cartService from '../services/cart.service';
 
@@ -12,7 +13,8 @@ export const getCartHandler = async (req: Request, res: Response) => {
     const cart = await cartService.getCart(getUserId(req));
     res.status(200).json(cart);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error getting cart");
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -28,7 +30,8 @@ export const addToCartHandler = async (req: Request, res: Response) => {
     if (error.message === 'Product not found') {
       return res.status(404).json({ message: error.message });
     }
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error getting cart");
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -40,7 +43,8 @@ export const updateCartItemHandler = async (req: Request, res: Response) => {
     const cart = await cartService.updateItemQuantity(getUserId(req), productId, quantity);
     res.status(200).json({ message: "Cart updated", cart });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error getting cart");
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -50,7 +54,8 @@ export const removeCartItemHandler = async (req: Request, res: Response) => {
     const cart = await cartService.removeItem(getUserId(req), productId);
     res.status(200).json({ message: "Item removed", cart });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error getting cart");
+    res.status(500).json({ message: "Server Error" });
   }
 };
 // merge guest & logged user cart info
@@ -66,6 +71,7 @@ export const mergeCartHandler = async (req: Request, res: Response) => {
     const updatedCart = await cartService.mergeCarts(userId, items);
     res.status(200).json(updatedCart);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    logger.error(error, "Error getting cart");
+    res.status(500).json({ message: "Server Error" });
   }
 };

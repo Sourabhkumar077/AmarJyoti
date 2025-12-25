@@ -14,6 +14,9 @@ const Cart: React.FC = () => {
   const { items = [], loading } = useAppSelector((state) => state.cart || { items: [] });
   const { user } = useAppSelector((state) => state.auth);
 
+  console.log("Cart items from Redux store:", items);
+  console.log("Cart loading state:", loading);
+
   // Initial Fetch (Only if user is logged in)
   useEffect(() => {
     if (user) {

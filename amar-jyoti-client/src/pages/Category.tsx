@@ -11,7 +11,7 @@ const Category: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('newest');
 
   // React Query Hook
-  const { data: products, isLoading, isError, error } = useQuery({
+  const { data: products, isLoading, isError, } = useQuery({
     queryKey: ['products', categoryParam, sortBy],
     queryFn: () => fetchProducts({
       category: categoryParam || undefined,

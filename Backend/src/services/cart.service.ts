@@ -27,9 +27,11 @@ export const addItemToCart = async (userId: string, productId: string, quantity:
 
     // Robust check for existing item
     const itemIndex = cart.items.findIndex(item => {
-      const itemPId = (item.product as any)._id 
-        ? (item.product as any)._id.toString() 
-        : item.product.toString();
+      const itemPId = item.product
+        ? (item.product as any)._id 
+          ? (item.product as any)._id.toString() 
+          : item.product.toString()
+        : undefined; // Handle null product
       return itemPId === productId;
     });
 
@@ -52,9 +54,11 @@ export const updateItemQuantity = async (userId: string, productId: string, quan
     if (!cart) throw new Error('Cart not found');
 
     const itemIndex = cart.items.findIndex(item => {
-      const itemPId = (item.product as any)._id 
-        ? (item.product as any)._id.toString() 
-        : item.product.toString();
+      const itemPId = item.product
+        ? (item.product as any)._id 
+          ? (item.product as any)._id.toString() 
+          : item.product.toString()
+        : undefined; // Handle null product
       return itemPId === productId;
     });
 
@@ -81,10 +85,12 @@ export const removeItem = async (userId: string, productId: string) => {
 
     // We check if 'item.product' is an Object (Populated) or String (ID)
     cart.items = cart.items.filter(item => {
-      const itemProductId = (item.product as any)._id 
+      const itemProductId = item.product
+        ? (item.product as any)._id 
           ? (item.product as any)._id.toString()   // If Populated
-          : item.product.toString();               // If String ID
-          
+          : item.product.toString()                // If String ID
+        : undefined; // Handle null product
+        
       // Keep item ONLY if IDs do NOT match
       return itemProductId !== productId;
     });

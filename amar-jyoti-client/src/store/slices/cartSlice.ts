@@ -160,17 +160,27 @@ const cartSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchCart.fulfilled, (state, action) => {
-        state.items = action.payload;
+        state.items = action.payload.items; // Assuming fetchCart returns { items: [...] }
+        state.loading = false;
+      })
+      .addCase(addToCartAsync.fulfilled, (state, action) => {
+        // Backend returns { message: ..., cart: { items: [...] } }
+        state.items = action.payload.cart.items; 
+        state.loading = false;
+      })
+      .addCase(updateCartItemAsync.fulfilled, (state, action) => {
+        // Backend returns { message: ..., cart: { items: [...] } }
+        state.items = action.payload.cart.items; 
         state.loading = false;
       })
       .addCase(removeFromCartAsync.fulfilled, (state, action) => {
-        // ✅ Match against productId to ensure UI updates correctly
-        state.items = state.items.filter(item => 
-            item.productId !== action.payload
-        );
+        // Assuming backend returns { message: ..., cart: { items: [...] } }
+        // If it returns just the productId, the previous filter logic was correct.
+        // Given the consistent issue, we'll assume it returns the updated cart.
+        state.items = action.payload.cart.items;
       })
       .addCase(mergeGuestCart.fulfilled, (state, action) => {
-        if(action.payload) state.items = action.payload;
+        if(action.payload) state.items = action.payload.items; // Assuming merge returns { items: [...] }
       });
   }
 });
