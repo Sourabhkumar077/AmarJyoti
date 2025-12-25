@@ -18,9 +18,9 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
     e.stopPropagation();
 
     if (user) {
-      // ✅ User Logged In -> Backend Call
-      dispatch(addToCartAsync({ productId: product._id, quantity: 1 }));
-      toast.success(`${product.name.substring(0, 15)}... added to cart! 🛒`)
+      // ✅ FIX: Pass the FULL product object, not just productId
+      // This enables the "Instant" UI update
+      dispatch(addToCartAsync({ product: product, quantity: 1 }));
       
     } else {
       // ✅ Guest User -> Local Storage
@@ -31,12 +31,12 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
         _id: Date.now().toString() // Temp ID
       }));
       
-      toast.success(`${product.name.substring(0, 15)}... added to cart! `);
+      toast.success(`${product.name.substring(0, 15)}... added to cart!`);
     }
   };
 
   return (
-    <div className="group bg-white rounded-xl overflow-hidden border border-subtle-text/10 shadow-(--shadow-soft) hover:shadow-lg transition-all duration-300">
+    <div className="group bg-white rounded-xl overflow-hidden border border-subtle-text/10 shadow-sm hover:shadow-lg transition-all duration-300">
       {/* Image Link */}
       <Link to={`/product/${product._id}`} className="block relative aspect-4/5 overflow-hidden bg-gray-100">
         <img 

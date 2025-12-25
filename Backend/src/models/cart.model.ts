@@ -19,7 +19,7 @@ const CartSchema: Schema = new Schema(
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'User', 
       required: true, 
-      unique: true // 1:1 Relationship: One cart per user
+      unique: true 
     },
     items: [
       {
@@ -37,7 +37,10 @@ const CartSchema: Schema = new Schema(
       }
     ]
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    versionKey: false 
+  }
 );
 
 export default mongoose.model<ICart>('Cart', CartSchema);

@@ -83,18 +83,14 @@ const ProductDetail: React.FC = () => {
       }
 
       if (user) {
-        dispatch(addToCartAsync({ productId: product._id, quantity: 1 }));
+        // ✅ FIX: Use 'product' directly (was productObject which caused crash)
+        dispatch(addToCartAsync({ product: product, quantity: 1 }));
       } else {
         dispatch(addToCartLocal({ productId: product._id, quantity: 1, product: product }));
       }
       
-      // ✨ Success 
-      toast.success(
-        <div className='flex items-center gap-2'>
-           <span>Added to Cart!</span>
-           <button onClick={() => navigate('/cart')} className='text-xs font-bold underline ml-2 text-indigo-600'>View Cart</button>
-        </div>
-      );
+      // We don't need the toast here because the Slice handles it now!
+      // But if you want a custom link toast, you can keep it.
     }
   };
 
@@ -117,7 +113,6 @@ const ProductDetail: React.FC = () => {
     setRating(rev.rating);
     setComment(rev.comment);
     setEditingReviewId(rev._id);
-    // Scroll to form (optional)
     document.getElementById('review-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -153,9 +148,9 @@ const ProductDetail: React.FC = () => {
             <h1 className="text-3xl font-serif text-dark">{product.name}</h1>
             <div className="flex items-center gap-2">
                <div className="flex text-yellow-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-4 h-4 ${i < (product.ratings || 0) ? 'fill-current' : 'text-gray-300'}`} />
-                  ))}
+                 {[...Array(5)].map((_, i) => (
+                   <Star key={i} className={`w-4 h-4 ${i < (product.ratings || 0) ? 'fill-current' : 'text-gray-300'}`} />
+                 ))}
                </div>
                <span className="text-sm text-subtle-text">({product.numOfReviews || 0} Reviews)</span>
             </div>
@@ -176,11 +171,11 @@ const ProductDetail: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             
             {/* Reviews List */}
-            <div className="space-y-6 max-h-150 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-6 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
               {reviewsLoading ? <Loader /> : reviews?.length === 0 ? (
                 <p className="text-subtle-text italic">No reviews yet. Be the first to review!</p>
               ) : (
-                reviews?.map((rev) => (
+                reviews?.map((rev: any) => (
                   <div key={rev._id} className={`border-b border-gray-100 pb-6 last:border-0 relative group transition-colors ${editingReviewId === rev._id ? 'bg-accent/5 p-4 rounded-lg' : ''}`}>
                     <div className="flex items-center gap-3 mb-2">
                        <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center text-accent font-bold">
@@ -198,15 +193,12 @@ const ProductDetail: React.FC = () => {
                     </div>
                     <p className="text-gray-600 text-sm pl-12">{rev.comment}</p>
                     
-                    {/* Action Buttons */}
                     <div className="absolute top-0 right-0 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm p-1 rounded">
-                      {/* Edit Button (Only Owner) */}
                       {user?._id === rev.user?._id && (
                         <button onClick={() => handleEditClick(rev)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded" title="Edit">
                            <Edit3 className="w-4 h-4" />
                         </button>
                       )}
-                      {/* Delete Button (Owner OR Admin) */}
                       {(user?.role === 'admin' || user?._id === rev.user?._id) && (
                         <button onClick={() => { if(confirm("Delete this review?")) deleteMutation.mutate(rev._id); }} className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded" title="Delete">
                            <Trash2 className="w-4 h-4" />
@@ -265,7 +257,7 @@ const ProductDetail: React.FC = () => {
                       <button 
                         type="submit" 
                         disabled={createMutation.isPending || updateMutation.isPending}
-                        className="w-full bg-accent text-white py-2 rounded-md hover:bg-yellow-600 transition shadow-md"
+                        className="w-full bg-accent text-white py-2 rounded-md hover:bg-yellow-600 transition shadow-md disabled:opacity-70"
                       >
                         {editingReviewId 
                           ? (updateMutation.isPending ? 'Updating...' : 'Update Review') 
