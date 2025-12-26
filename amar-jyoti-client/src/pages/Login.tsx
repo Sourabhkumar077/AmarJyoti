@@ -1,31 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Lock, ArrowRight,  Smartphone } from 'lucide-react';
+import { Lock, ArrowRight, Smartphone, Eye, EyeOff, Loader2 } from 'lucide-react'; // Added Eye icons
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
-
 import { mergeGuestCart, fetchCart } from '../store/slices/cartSlice';
 import toast from 'react-hot-toast';
 
-const Login: React.FC = () => {
+// Custom Shake Animation Style
+const shakeKeyframes = `
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+  }
+  .animate-shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  }
+`;
 
+const Login: React.FC = () => {
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
-    // const [errorMsg, setErrorMsg] = useState('');
+    
+    // --- 1. NEW UX STATES ---
+    const [showPassword, setShowPassword] = useState(false);
+    const [isShaking, setIsShaking] = useState(false);
 
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const [searchParams] = useSearchParams();
     const redirectTarget = searchParams.get('redirect');
 
+    // Reset shake animation after it plays
+    useEffect(() => {
+        if (isShaking) {
+            const timer = setTimeout(() => setIsShaking(false), 400);
+            return () => clearTimeout(timer);
+        }
+    }, [isShaking]);
+
     const loginMutation = useMutation({
         mutationFn: async (data: any) => {
             const response = await apiClient.post('/auth/login', data);
             return response.data;
         },
-
         onSuccess: async (data) => {
             dispatch(setCredentials({
                 user: data.user,
@@ -41,8 +61,6 @@ const Login: React.FC = () => {
             // @ts-ignore
             dispatch(fetchCart());
 
-
-            // Redirect Logic
             if (data.user.role === 'admin') {
                 navigate('/admin');
             } else if (redirectTarget === 'checkout') {
@@ -52,7 +70,10 @@ const Login: React.FC = () => {
             }
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || "Login failed. Please check credentials.");
+            // --- 2. TRIGGER SHAKE ON ERROR ---
+            setIsShaking(true); 
+            setPassword(''); // Optional: Clear password on failure
+            toast.error(error.response?.data?.message || "Invalid credentials");
         }
     });
 
@@ -60,6 +81,7 @@ const Login: React.FC = () => {
         e.preventDefault();
         if (!identifier || !password) {
             toast.error("Please fill in all fields");
+            setIsShaking(true);
             return;
         }
         loginMutation.mutate({ identifier, password });
@@ -67,7 +89,9 @@ const Login: React.FC = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-primary/30 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8 bg-light p-8 md:p-10 rounded-xl shadow-(--shadow-soft)">
+            <style>{shakeKeyframes}</style> {/* Inject Animation */}
+            
+            <div className={`max-w-md w-full space-y-8 bg-light p-8 md:p-10 rounded-xl shadow-(--shadow-soft) transition-transform ${isShaking ? 'animate-shake border-red-400 border' : ''}`}>
 
                 {/* Header */}
                 <div className="text-center">
@@ -77,19 +101,10 @@ const Login: React.FC = () => {
                     </p>
                 </div>
 
-                {/* Error Alert
-                {errorMsg && (
-                    <div className="bg-red-50 border border-red-200 text-error px-4 py-3 rounded-md flex items-center text-sm">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        {errorMsg}
-                    </div>
-                )} */}
-
-                {/* Form */}
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4">
 
-                        {/* Identifier Input (Email/Phone) */}
+                        {/* Identifier Input */}
                         <div>
                             <label htmlFor="identifier" className="block text-sm font-medium text-dark mb-1">Email or Phone Number</label>
                             <div className="relative">
@@ -100,6 +115,7 @@ const Login: React.FC = () => {
                                     id="identifier"
                                     name="identifier"
                                     type="text"
+                                    autoFocus // --- 3. AUTO FOCUS ---
                                     required
                                     className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm transition-all"
                                     placeholder="Enter email or phone"
@@ -109,7 +125,7 @@ const Login: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Password Input */}
+                        {/* Password Input (Optimized) */}
                         <div>
                             <div className="flex items-center justify-between mb-1">
                                 <label htmlFor="password" className="block text-sm font-medium text-dark">Password</label>
@@ -124,13 +140,23 @@ const Login: React.FC = () => {
                                 <input
                                     id="password"
                                     name="password"
-                                    type="password"
+                                    // --- 4. TOGGLE TYPE ---
+                                    type={showPassword ? "text" : "password"} 
                                     required
-                                    className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm transition-all"
+                                    className="appearance-none relative block w-full pl-10 pr-10 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm transition-all"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
+                                
+                                {/* --- 5. EYE ICON BUTTON --- */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-subtle-text/50 hover:text-accent transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -141,7 +167,7 @@ const Login: React.FC = () => {
                         className={`group w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-accent hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all shadow-lg shadow-accent/20 ${loginMutation.isPending ? 'opacity-70 cursor-wait' : ''}`}
                     >
                         {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
-                        {!loginMutation.isPending && <ArrowRight className="ml-2 w-4 h-4" />}
+                        {loginMutation.isPending ? <Loader2 className="ml-2 w-4 h-4 animate-spin" /> : <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 
