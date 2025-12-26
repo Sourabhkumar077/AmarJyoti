@@ -154,7 +154,7 @@ const Home: React.FC = () => {
           </div>
 
           {/* The Bento Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-6 h-[600px]">
+          <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-6 h-150">
             {categories.map((cat, index) => (
               <Link
                 key={cat.id}
@@ -171,7 +171,7 @@ const Home: React.FC = () => {
                 />
 
                 {/* Elegant Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
 
                 {/* Hover Border Effect */}
                 <div className="absolute inset-4 border border-white/20 rounded-2xl scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-500" />

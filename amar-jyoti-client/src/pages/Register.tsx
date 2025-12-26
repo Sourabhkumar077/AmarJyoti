@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Lock, User, Phone, CheckCircle, Loader2 } from 'lucide-react'; // ✅ Icons updated
+import { Mail, Lock, User, Phone, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
@@ -13,20 +13,34 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // ---STATE FOR OTP ---
+  // --- STATE FOR OTP & UX ---
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
+  const [timer, setTimer] = useState(0); // ⏳ Countdown Timer
+  
+  // Ref for Auto-Focusing OTP Input
+  const otpInputRef = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const redirectTarget = searchParams.get('redirect');
 
+  // --- TIMER LOGIC ---
+  useEffect(() => {
+    let interval: any;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
+
   // --- 1. REGISTER MUTATION ---
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Backend expects { email, otp, name... } 
       const response = await apiClient.post('/auth/register', data);
       return response.data;
     },
@@ -54,7 +68,6 @@ const Register: React.FC = () => {
       toast.error("Please enter your email address first");
       return;
     }
-    // Basic email validation
     if (!email.includes('@')) {
       toast.error("Invalid email address");
       return;
@@ -64,7 +77,14 @@ const Register: React.FC = () => {
     try {
       await apiClient.post('/auth/send-otp', { email });
       setIsOtpSent(true);
+      setTimer(60); // ⏳ Start 60s cooldown
       toast.success("OTP sent to your email!");
+      
+      // ⚡ UX Magic: Auto-focus the OTP input after a split second
+      setTimeout(() => {
+        otpInputRef.current?.focus();
+      }, 100);
+
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send OTP");
     } finally {
@@ -76,13 +96,12 @@ const Register: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validations
     if (!isOtpSent) {
       toast.error("Please verify your email first");
       return;
     }
     if (!otp || otp.length !== 6) {
-      toast.error("Please enter the 6-digit OTP sent to your email");
+      toast.error("Please enter the 6-digit OTP");
       return;
     }
     if (password.length < 6) {
@@ -94,15 +113,7 @@ const Register: React.FC = () => {
       return;
     }
 
-    // Payload (Includes OTP)
-    const payload = {
-      name,
-      phone,
-      password,
-      email,
-      otp 
-    };
-
+    const payload = { name, phone, password, email, otp };
     registerMutation.mutate(payload);
   };
 
@@ -155,7 +166,6 @@ const Register: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                  {/* Green Check if Sent */}
                   {isOtpSent && (
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                        <CheckCircle className="h-5 w-5 text-green-500" />
@@ -163,29 +173,51 @@ const Register: React.FC = () => {
                   )}
                 </div>
 
-                {/* Verify Button */}
+                {/* Verify / Timer Button */}
                 {!isOtpSent && (
                   <button
                     type="button"
                     onClick={handleSendOtp}
-                    disabled={otpLoading || !email}
-                    className="bg-dark text-white px-4 rounded-md text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                    disabled={otpLoading || !email || timer > 0}
+                    className={`bg-dark text-white px-4 rounded-md text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap min-w-25 flex justify-center items-center`}
                   >
-                    {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify"}
+                    {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : 
+                     timer > 0 ? <span className="text-xs">Wait {timer}s</span> : "Verify"
+                    }
                   </button>
                 )}
               </div>
             </div>
 
-            {/* OTP Input (Only shows after Verify clicked) */}
+            {/* OTP Input (Optimized) */}
             {isOtpSent && (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label className="block text-sm font-medium text-dark mb-1">One Time Password (OTP) *</label>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-dark">One Time Password (OTP) *</label>
+                        {/* Resend Link */}
+                        {timer === 0 && (
+                            <button 
+                                type="button" 
+                                onClick={handleSendOtp}
+                                className="text-xs text-accent font-medium hover:underline flex items-center gap-1"
+                            >
+                                <RefreshCw className="w-3 h-3" /> Resend OTP
+                            </button>
+                        )}
+                    </div>
+                    
                     <input
+                        ref={otpInputRef} // ⚡ Auto Focus
                         type="text"
+                        inputMode="numeric" // 📱 Show Number Pad on Mobile
+                        pattern="[0-9]*" // 📱 iOS Number Pad
+                        autoComplete="one-time-code" // 🤖 Auto-fill SMS code
                         placeholder="Enter 6-digit OTP"
                         value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, ''); // Only numbers allowed
+                            if (val.length <= 6) setOtp(val);
+                        }}
                         maxLength={6}
                         className="block w-full px-3 py-3 border-2 border-green-100 bg-green-50/50 rounded-md text-center tracking-[0.5em] font-bold text-gray-700 focus:ring-green-500 focus:border-green-500 sm:text-sm"
                         required

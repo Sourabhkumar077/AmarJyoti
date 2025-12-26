@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { validate } from '../middlewares/zodValidation';
-import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema } from '../utils/zodSchemas';
+import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema ,sendOtpSchema} from '../utils/zodSchemas';
 import { loginHandler, registerHandler,resetPasswordHandler, forgotPassword,updateProfileHandler ,sendOtp} from '../controllers/auth.controller';
 import { protect } from '../middlewares/auth.middleware';
 import rateLimit from 'express-rate-limit';
@@ -13,15 +13,14 @@ const otpLimiter = rateLimit({
 });
 
 const router = Router();
-// New Route for sending OTP
-router.post('/send-otp',otpLimiter, sendOtp);
+// New Route for sending OTP in mail verification
+router.post('/send-otp',otpLimiter,validate(sendOtpSchema), sendOtp);
 
 // Route: POST /api/v1/auth/register
 router.post('/register', validate(registerSchema), registerHandler);
 
 // Route: POST /api/v1/auth/login
 router.post('/login', validate(loginSchema), loginHandler);
-
 
 
 // Route : 

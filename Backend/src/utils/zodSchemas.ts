@@ -1,23 +1,36 @@
 import { z } from 'zod';
 
-// 1. Schema for User Registration (FIXED)
+// Email Regex Pattern (Standard format check)
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+// 1. Schema for User Registration
 export const registerSchema = z.object({
   body: z.object({
     name: z.string().min(2, "Name is required"),
-    email:z.email("Invalid email format") // Basic check (@ aur .)
-    .min(5, "Email is too short")
-    .trim()
-    .toLowerCase(), 
-    phone: z.string().min(10, "Phone number must be at least 10 digits"), // Required
+    email: z.string()
+      .min(1, "Email is required")
+      .regex(emailRegex, "Invalid email address format") 
+      .trim()
+      .toLowerCase(), 
+      
+    phone: z.string().min(10, "Phone number must be at least 10 digits"), 
     password: z.string().min(6, "Password must be at least 6 characters"),
-    otp: z.string().length(6, "OTP must be 6 digits")
+    otp: z.string().length(6, "OTP must be 6 digits") 
+  }),
+});
+
+//  Schema for Sending OTP
+export const sendOtpSchema = z.object({
+  body: z.object({
+    email: z.string().regex(emailRegex, "Invalid email address"),
   }),
 });
 
 // 2. Schema for User Login
 export const loginSchema = z.object({
   body: z.object({
-    identifier: z.string().min(1, "Email or Phone is required"), 
+    email: z.string().regex(emailRegex, "Invalid email address").optional(),
+    identifier: z.string().optional(),
     password: z.string().min(1, "Password is required"),
   }),
 });
@@ -74,7 +87,7 @@ export const updateCartSchema = z.object({
   }),
 });
 
-// order schema validation
+// Order schema validation
 export const createOrderSchema = z.object({
   body: z.object({
     shippingAddress: z.object({
@@ -87,7 +100,7 @@ export const createOrderSchema = z.object({
   }),
 });
 
-// Verify Payment Schema (PhonePe)
+// Verify Payment Schema
 export const verifyPaymentSchema = z.object({
   body: z.object({
     merchantTransactionId: z.string().min(1, "Transaction ID is required"),
@@ -105,7 +118,7 @@ export const updateOrderStatusSchema = z.object({
       'Delivered',
       'Cancelled'
     ], {
-      error: "Invalid Order Status"   
+      message: "Invalid Order Status"   
     }),
   }),
 });
