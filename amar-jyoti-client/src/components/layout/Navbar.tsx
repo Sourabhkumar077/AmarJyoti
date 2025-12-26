@@ -8,12 +8,12 @@ const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [cartBump, setCartBump] = useState(false); 
   
-  // Get cart items to calculate count dynamically
-  const { items } = useAppSelector((state) => state.cart);
-  const { user } = useAppSelector((state) => state.auth);
+  //  Added (state: any) to bypass type checking on state structure
+  const { items } = useAppSelector((state: any) => state.cart);
+  const { user } = useAppSelector((state: any) => state.auth);
 
-  // Calculate total quantity
-  const cartCount = items.reduce((total, item) => total + item.quantity, 0);
+  //  Added types to reduce parameters
+  const cartCount = items.reduce((total: number, item: any) => total + item.quantity, 0);
 
   //  Trigger Animation when cartCount changes
   useEffect(() => {

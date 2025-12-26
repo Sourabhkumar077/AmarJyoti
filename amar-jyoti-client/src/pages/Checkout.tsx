@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { MapPin, ShieldCheck, Lock, CreditCard } from 'lucide-react';
-import { useAppSelector } from '../store/hooks'; // Note: dispatch ki jarurat nahi hai yahan
+import { useAppSelector } from '../store/hooks'; 
 import apiClient from '../api/client';
 import { State, City } from 'country-state-city';
 import toast from 'react-hot-toast';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const { items } = useAppSelector((state) => state.cart);
+  // FIXED: Added (state: any) to bypass implicit any error
+  const { items } = useAppSelector((state: any) => state.cart);
 
   // Form State
   const [address, setAddress] = useState({
@@ -25,8 +26,6 @@ const Checkout: React.FC = () => {
   const [allCities, setAllCities] = useState<any[]>([]);
   const [selectedStateCode, setSelectedStateCode] = useState('');
   
-  // const [errorMsg, setErrorMsg] = useState('');
-
   // 1. Initial Load: Get States & Check Cart
   useEffect(() => {
     // Load all states of India
@@ -41,7 +40,8 @@ const Checkout: React.FC = () => {
   }, [items, navigate]);
 
   // 2. Calculate Totals
-  const subtotal = items.reduce((acc, item) => {
+  // FIXED: Added types to reduce parameters (acc: number, item: any)
+  const subtotal = items.reduce((acc: number, item: any) => {
     const price = item.product?.price || 0; 
     return acc + (price * item.quantity);
   }, 0);
@@ -85,7 +85,7 @@ const Checkout: React.FC = () => {
   // 5. Handle Form Submit
   const handlePayment = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.error('');
+    toast.dismiss();
 
     // Basic Validation
     if (!address.street || !address.city || !address.state || !address.pincode) {
@@ -200,14 +200,14 @@ const Checkout: React.FC = () => {
 
           {/* === RIGHT: ORDER SUMMARY === */}
           <div>
-             <div className="bg-light p-8 rounded-xl shadow-sm border border-subtle-text/10 sticky top-24">
+              <div className="bg-light p-8 rounded-xl shadow-sm border border-subtle-text/10 sticky top-24">
               <h2 className="text-xl font-serif mb-6 flex items-center">
                 <ShieldCheck className="w-5 h-5 mr-2 text-accent" /> Order Summary
               </h2>
 
               {/* Items List */}
               <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                {items.map(item => (
+                {items.map((item: any) => (
                   <div key={item.productId} className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-16 bg-secondary/10 rounded overflow-hidden shrink-0">

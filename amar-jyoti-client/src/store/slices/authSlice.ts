@@ -25,22 +25,23 @@ interface AuthState {
   loading: boolean;
 }
 
-const storedToken = localStorage.getItem('token');
-const storedUser = localStorage.getItem('user');
 
-let userFromStorage = null;
+
+const storedToken = localStorage.getItem('token');
+let storedUser: User | null = null;
+
 try {
   const storedUserStr = localStorage.getItem('user');
   if (storedUserStr) {
-    userFromStorage = JSON.parse(storedUserStr);
+    storedUser = JSON.parse(storedUserStr);
   }
 } catch (e) {
   console.error("Failed to load user from storage", e);
-  localStorage.removeItem('user'); // Corrupt data remove
+  localStorage.removeItem('user'); 
 }
 
 const initialState: AuthState = {
-  user: storedUser ? JSON.parse(storedUser) : null,
+  user: storedUser,
   token: storedToken || null,
   isAuthenticated: !!storedToken,
   loading: false,
@@ -50,8 +51,6 @@ export const fetchUserProfile = createAsyncThunk(
   'auth/fetchUserProfile',
   async (_, { rejectWithValue }) => {
     try {
-      // ⚠️ Check this URL: It must match your Backend Route for "Get My Profile"
-      // Usually it is '/users/my-profile' or '/users/profile'
       const response = await apiClient.get('/users/account'); 
       return response.data.data; 
     } catch (error: any) {
@@ -93,12 +92,6 @@ const authSlice = createSlice({
       })
       .addCase(fetchUserProfile.rejected, (state) => {
         state.loading = false;
-        // Optional: If token is invalid, force logout
-        // state.user = null;
-        // state.token = null;
-        // state.isAuthenticated = false;
-        // localStorage.removeItem('token');
-        // localStorage.removeItem('user');
       });
   },
 });

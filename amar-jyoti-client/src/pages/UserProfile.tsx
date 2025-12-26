@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   User, Package, MapPin, LogOut, ChevronRight, 
@@ -27,10 +27,10 @@ const UserProfile = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state: any) => state.auth); // Fixed: Added state:any
   
   const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'addresses' | 'reviews'>('orders');
-  const [isEditing, setIsEditing] = useState(false);
+  // REMOVED: isEditing state was unused
   const [newAddressMode, setNewAddressMode] = useState(false);
   
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -66,7 +66,7 @@ const UserProfile = () => {
     mutationFn: async (data: any) => (await apiClient.put('/auth/profile', data)).data,
     onSuccess: (data) => {
       dispatch(setCredentials({ user: data.user, token: localStorage.getItem('token') || '' }));
-      setIsEditing(false); setNewAddressMode(false); 
+      setNewAddressMode(false); 
       toast.success("Profile Updated! ✅");
     },
     onError: (err: any) => toast.error(err.response?.data?.message || "Update Failed")
@@ -218,12 +218,12 @@ const UserProfile = () => {
                <div className="bg-light p-8 rounded-xl shadow-sm">
                   <h2 className="text-xl font-bold mb-6">Edit Profile</h2>
                   <form onSubmit={(e) => { e.preventDefault(); updateProfileMutation.mutate(formData); }} className="space-y-4 max-w-lg">
-                     <input value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} className="w-full p-3 border rounded" placeholder="Name" />
-                     <input value={formData.phone} onChange={e=>setFormData({...formData, phone:e.target.value})} className="w-full p-3 border rounded" placeholder="Phone" />
-                     <button type="submit" disabled={updateProfileMutation.isPending} className="bg-accent text-white px-6 py-2 rounded hover:bg-yellow-600 transition">
-                       {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
-                     </button>
-                  </form>
+                      <input value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} className="w-full p-3 border rounded" placeholder="Name" />
+                      <input value={formData.phone} onChange={e=>setFormData({...formData, phone:e.target.value})} className="w-full p-3 border rounded" placeholder="Phone" />
+                      <button type="submit" disabled={updateProfileMutation.isPending} className="bg-accent text-white px-6 py-2 rounded hover:bg-yellow-600 transition">
+                        {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                      </button>
+                   </form>
                </div>
             )}
             
@@ -260,27 +260,27 @@ const UserProfile = () => {
                     </div>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     {user.addresses && user.addresses.length > 0 ? (
-                       user.addresses.map((addr: any, idx: number) => (
-                        <div key={idx} className={`bg-light p-6 rounded-xl border relative ${addr.isDefault ? 'border-accent shadow-md' : 'border-subtle-text/20'}`}>
-                           {addr.isDefault && <span className="absolute top-4 right-4 text-xs bg-accent text-white px-2 py-1 rounded-full font-medium">Default</span>}
-                           <div className="flex items-start gap-3">
+                      {user.addresses && user.addresses.length > 0 ? (
+                        user.addresses.map((addr: any, idx: number) => (
+                         <div key={idx} className={`bg-light p-6 rounded-xl border relative ${addr.isDefault ? 'border-accent shadow-md' : 'border-subtle-text/20'}`}>
+                            {addr.isDefault && <span className="absolute top-4 right-4 text-xs bg-accent text-white px-2 py-1 rounded-full font-medium">Default</span>}
+                            <div className="flex items-start gap-3">
                              <MapPin className="w-5 h-5 text-subtle-text mt-1" />
                              <div>
                                 <p className="text-dark font-medium">{addr.street}</p>
                                 <p className="text-sm text-subtle-text">{addr.city}, {addr.state} - {addr.pincode}</p>
                                 <p className="text-xs text-subtle-text uppercase mt-1 tracking-wide">{addr.country}</p>
                              </div>
-                           </div>
-                        </div>
-                     ))
-                     ) : (
+                            </div>
+                         </div>
+                      ))
+                      ) : (
                         !newAddressMode && (
                           <div className="col-span-full text-center py-10 bg-light rounded-xl border border-dashed border-subtle-text/30">
                              <p className="text-subtle-text">No addresses saved yet.</p>
                           </div>
                         )
-                     )}
+                      )}
                   </div>
                </div>
             )}

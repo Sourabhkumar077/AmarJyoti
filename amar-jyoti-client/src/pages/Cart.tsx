@@ -10,12 +10,9 @@ const Cart: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   
-  // Safe Destructuring with default value
-  const { items = [], loading } = useAppSelector((state) => state.cart || { items: [] });
-  const { user } = useAppSelector((state) => state.auth);
-
-  console.log("Cart items from Redux store:", items);
-  console.log("Cart loading state:", loading);
+  //  Added (state: any) to bypass strict type checking on the OR condition
+  const { items = [], loading } = useAppSelector((state: any) => state.cart || { items: [] });
+  const { user } = useAppSelector((state: any) => state.auth);
 
   // Initial Fetch (Only if user is logged in)
   useEffect(() => {
@@ -118,9 +115,9 @@ const Cart: React.FC = () => {
                 </button>
                 
                 <div className="text-center">
-                   <Link to="/products" className="text-sm text-subtle-text hover:text-accent transition-colors">
-                     or Continue Shopping
-                   </Link>
+                    <Link to="/products" className="text-sm text-subtle-text hover:text-accent transition-colors">
+                      or Continue Shopping
+                    </Link>
                 </div>
               </div>
             </div>
