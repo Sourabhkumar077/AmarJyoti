@@ -22,7 +22,7 @@ app.use(cookieParser());
 app.use(compression());
 app.use(helmet()); // Security headers 
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5174",
+    origin: process.env.CLIENT_URL || "http://localhost:5173" || "https://amar-jyoti.vercel.app",
     credentials: true
 }));
 
