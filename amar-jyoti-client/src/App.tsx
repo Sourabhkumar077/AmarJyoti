@@ -1,7 +1,5 @@
-import React, { Suspense } from 'react'; // <--- FIXED: Must be at the top
-
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { useEffect } from 'react'
 import { useAppDispatch } from './store/hooks';
 import { fetchUserProfile } from './store/slices/authSlice'; 
 
