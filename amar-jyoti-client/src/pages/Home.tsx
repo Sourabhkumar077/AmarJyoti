@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import NewArrivals from "../components/common/NewArrivals";
 import LocationSection from "../components/common/LocationSection";
 import ServicesSection from '../components/common/ServicesSection';
@@ -142,37 +142,60 @@ const Home: React.FC = () => {
       {/* Categories Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 space-y-3">
-            <h2 className="text-4xl font-serif text-dark">Shop by Category</h2>
-            <p className="text-subtle-text">
-              Curated collections for every occasion
+          {/* Header Section */}
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-5xl font-serif text-dark tracking-tight">
+              Shop by <span className="italic text-accent">Category</span>
+            </h2>
+            <div className="h-1 w-24 bg-accent/30 mx-auto rounded-full"></div>
+            <p className="text-subtle-text text-lg max-w-2xl mx-auto font-light">
+              Explore our finest collections curated for your unique style.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {categories.map((cat) => (
+          {/* The Bento Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-6 h-150">
+            {categories.map((cat, index) => (
               <Link
                 key={cat.id}
                 to={cat.path}
-                className="group relative h-125 overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500"
+                className={`group relative overflow-hidden rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer
+            ${index === 0 ? "md:col-span-2 md:row-span-2" : "md:col-span-2 md:row-span-1"}
+          `}
               >
+                {/* Image with Zoom Effect */}
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
-                <div className="absolute bottom-0 left-0 p-8 w-full text-center">
-                  <h3 className="text-2xl font-serif text-white mb-2">
-                    {cat.name}
-                  </h3>
-                  <p className="text-white/80 text-sm mb-4 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                    {cat.description}
-                  </p>
-                  <span className="inline-block px-6 py-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full text-white text-sm font-medium hover:bg-white hover:text-dark transition-colors">
-                    Explore
-                  </span>
+                {/* Elegant Gradient Overlay */}
+                <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+
+                {/* Hover Border Effect */}
+                <div className="absolute inset-4 border border-white/20 rounded-2xl scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-500" />
+
+                {/* Content */}
+                <div className="absolute bottom-0 left-0 p-8 w-full flex flex-col items-start justify-end h-full">
+                  <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <span className="text-accent text-xs font-bold tracking-widest uppercase mb-2 block opacity-0 group-hover:opacity-100 transition-opacity delay-100">
+                      Collection
+                    </span>
+                    <h3 className={`font-serif text-white mb-2 leading-tight ${index === 0 ? "text-4xl" : "text-3xl"}`}>
+                      {cat.name}
+                    </h3>
+                    <p className="text-white/80 text-sm max-w-[80%] line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                      {cat.description}
+                    </p>
+                  </div>
+
+                  {/* Floating Arrow Button */}
+                  <div className="absolute bottom-8 right-8 bg-white text-dark p-3 rounded-full opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 delay-200 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                    </svg>
+                  </div>
                 </div>
               </Link>
             ))}
