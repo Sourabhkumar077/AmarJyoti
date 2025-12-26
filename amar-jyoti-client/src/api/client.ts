@@ -2,7 +2,7 @@ import axios from 'axios';
 // import { store } from '../store/store';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5000/api/v1', // Verify your backend URL matches
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1', // Verify your backend URL matches
   headers: {
     'Content-Type': 'application/json',
   },
