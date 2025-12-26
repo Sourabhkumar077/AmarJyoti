@@ -6,7 +6,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true // If you use cookies
+  withCredentials: true 
 });
 
 // Interceptor: Attach Token to every request automatically

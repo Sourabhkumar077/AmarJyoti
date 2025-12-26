@@ -15,7 +15,6 @@ export interface Product {
   colors: string[];
   images: string[];
   isActive: boolean;
-  // 👇 Added these fields for Reviews
   ratings?: number;
   numOfReviews?: number;
 }
@@ -25,12 +24,15 @@ interface ProductFilters {
   minPrice?: number;
   maxPrice?: number;
   sortBy?: string; // 'newest' | 'price_asc' | 'price_desc'
+  search?: string; 
 }
+
 export interface Category {
   _id: string;
   name: string;
 }
 
+// ✅ FIXED: Fetch Products
 export const fetchProducts = async (filters: ProductFilters): Promise<Product[]> => {
   const params = new URLSearchParams();
   
@@ -38,17 +40,26 @@ export const fetchProducts = async (filters: ProductFilters): Promise<Product[]>
   if (filters.minPrice) params.append('min', filters.minPrice.toString());
   if (filters.maxPrice) params.append('max', filters.maxPrice.toString());
   if (filters.sortBy) params.append('sortBy', filters.sortBy);
+  if (filters.search) params.append('search', filters.search);
 
-  const response = await apiClient.get<{ products: Product[] }>(`/products?${params.toString()}`);
-  return response.data.products;
+  // Note: We don't use <{ products: Product[] }> generic here because 
+  // the wrapper is actually your ApiResponse object
+  const response = await apiClient.get(`/products?${params.toString()}`);
+  
+  // FIX: Access .data.data because your backend returns new ApiResponse(200, data, ...)
+  return response.data.data; 
 };
 
+// ✅ FIXED: Fetch Single Product
 export const fetchProductById = async (id: string): Promise<Product> => {
-  const response = await apiClient.get<Product>(`/products/${id}`);
-  return response.data;
+  const response = await apiClient.get(`/products/${id}`);
+  // FIX: Access .data.data here too
+  return response.data.data || response.data; 
 };
 
-export const fetchCategories = async () => {
-  const response = await apiClient.get<Category[]>('/categories');
-  return response.data;
+// ✅ FIXED: Fetch Categories
+export const fetchCategories = async (): Promise<Category[]> => {
+  const response = await apiClient.get('/categories');
+  // FIX: Access .data.data here too
+  return response.data.data;
 };

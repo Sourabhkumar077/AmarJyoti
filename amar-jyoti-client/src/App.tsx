@@ -2,9 +2,6 @@ import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAppDispatch } from './store/hooks';
 import { fetchUserProfile } from './store/slices/authSlice'; 
-
-
-
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Loader from './components/common/Loader';
