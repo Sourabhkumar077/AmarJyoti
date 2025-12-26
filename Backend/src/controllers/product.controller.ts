@@ -22,7 +22,7 @@ export const createProductHandler = async (req: Request, res: Response) => {
 };
 
 // 2. Get All Products (With Filters)
-export const getAllProducts = asyncHandler(async (req: Request, res: Response) => {
+export const getProductsHandler = asyncHandler(async (req: Request, res: Response) => {
     const { category, sortBy, search } = req.query;
 
     let query: any = {};
