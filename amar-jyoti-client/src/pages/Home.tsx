@@ -139,29 +139,30 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
       <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-          {/* Header Section */}
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-5xl font-serif text-dark tracking-tight">
-              Shop by <span className="italic text-accent">Category</span>
-            </h2>
-            <div className="h-1 w-24 bg-accent/30 mx-auto rounded-full"></div>
-            <p className="text-subtle-text text-lg max-w-2xl mx-auto font-light">
-              Explore our finest collections curated for your unique style.
-            </p>
-          </div>
+      <div className="container mx-auto px-4">
+        
+        {/* Header Section */}
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="text-5xl font-serif text-dark tracking-tight">
+            Shop by <span className="italic text-accent">Category</span>
+          </h2>
+          <div className="h-1 w-24 bg-accent/30 mx-auto rounded-full"></div>
+          <p className="text-subtle-text text-lg max-w-2xl mx-auto font-light">
+            Explore our finest collections curated for your unique style.
+          </p>
+        </div>
 
-          {/* The Bento Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-6 h-150">
-            {categories.map((cat, index) => (
+        {/* The Bento Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 h-auto md:h-150">
+          {categories && categories.length > 0 ? (
+            categories.map((cat, index) => (
               <Link
-                key={cat.id}
+                key={cat.id || index}
                 to={cat.path}
-                className={`group relative overflow-hidden rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer
-            ${index === 0 ? "md:col-span-2 md:row-span-2" : "md:col-span-2 md:row-span-1"}
-          `}
+                className={`group relative overflow-hidden rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer h-96 md:h-auto
+                  ${index === 0 ? "md:col-span-2 md:row-span-2" : "md:col-span-2 md:row-span-1"}
+                `}
               >
                 {/* Image with Zoom Effect */}
                 <img
@@ -170,7 +171,6 @@ const Home: React.FC = () => {
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1"
                 />
 
-                {/* Elegant Gradient Overlay */}
                 <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
 
                 {/* Hover Border Effect */}
@@ -198,10 +198,15 @@ const Home: React.FC = () => {
                   </div>
                 </div>
               </Link>
-            ))}
-          </div>
+            ))
+          ) : (
+            <div className="col-span-1 md:col-span-4 h-96 flex items-center justify-center bg-gray-50 rounded-3xl border border-dashed border-gray-300">
+              <p className="text-gray-500 text-lg">Loading Collections...</p>
+            </div>
+          )}
         </div>
-      </section>
+      </div>
+    </section>
       <NewArrivals />
       <ServicesSection />
       <LocationSection />

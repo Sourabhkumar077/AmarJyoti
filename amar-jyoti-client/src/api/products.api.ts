@@ -32,7 +32,7 @@ export interface Category {
   name: string;
 }
 
-// ✅ FIXED: Fetch Products
+//  Fetch Products
 export const fetchProducts = async (filters: ProductFilters): Promise<Product[]> => {
   const params = new URLSearchParams();
   
