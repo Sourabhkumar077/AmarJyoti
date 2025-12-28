@@ -11,6 +11,11 @@ const NewArrivals: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
+  // 🖱️ Dragging ke liye Refs (Desktop Slide feature)
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+
   // Fetch Products
   const { data: products, isLoading } = useQuery({
     queryKey: ['newArrivals'],
@@ -20,46 +25,79 @@ const NewArrivals: React.FC = () => {
   // Duplicate products for infinite loop effect
   const displayProducts = products ? [...products.slice(0, 8), ...products.slice(0, 8)] : [];
 
-  // Auto Scroll Logic
+  // 🔄 Auto Scroll Logic
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
 
-    let scrollSpeed = 1; // Default Desktop Speed
+    let scrollSpeed = 1; // Desktop Speed
 
-    // 📱 Phone me speed badhane ke liye
+    
     if (window.innerWidth < 768) {
-      scrollSpeed = 2; // Faster on Mobile
+      scrollSpeed = 2; 
     }
 
     const scroll = () => {
-      // Agar user mouse upar rakha hai, to auto-scroll rok do
-      if (isHovered) return;
+      
+      if (isHovered || isDragging.current) return;
 
       if (scrollContainer.scrollLeft >= scrollContainer.scrollWidth / 2) {
-        // Reset to start instantly for infinite effect
         scrollContainer.scrollLeft = 0;
       } else {
         scrollContainer.scrollLeft += scrollSpeed;
       }
     };
 
-    const intervalId = setInterval(scroll, 20); // Run every 20ms
+    const intervalId = setInterval(scroll, 20); 
 
     return () => clearInterval(intervalId);
   }, [isHovered, products]);
 
-  // Button Handlers
+  // ⬅️➡️ Button Handlers (Mobile Only)
   const scrollLeft = () => {
     if (scrollRef.current) {
+     
+      setIsHovered(true);
       scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+      
+      setTimeout(() => setIsHovered(false), 1000);
     }
   };
 
   const scrollRight = () => {
     if (scrollRef.current) {
+      setIsHovered(true);
       scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+      setTimeout(() => setIsHovered(false), 1000);
     }
+  };
+
+  // 🖱️ Mouse Drag Handlers (For Desktop Slide)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    setIsHovered(true); 
+    if (scrollRef.current) {
+      startX.current = e.pageX - scrollRef.current.offsetLeft;
+      scrollLeftStart.current = scrollRef.current.scrollLeft;
+    }
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+    
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX.current) * 2; // Speed of drag
+    scrollRef.current.scrollLeft = scrollLeftStart.current - walk;
+  };
+
+  const handleMouseLeave = () => {
+    isDragging.current = false;
+    setIsHovered(false);
   };
 
   if (isLoading) return <Loader />;
@@ -81,10 +119,11 @@ const NewArrivals: React.FC = () => {
 
       <div className="relative container mx-auto px-4">
         
-        {/* Left Button */}
+        {/* Left Button  */}
         <button 
           onClick={scrollLeft}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 p-3 rounded-full shadow-md hover:bg-white text-dark hidden group-hover:block transition-all"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 p-3 rounded-full shadow-lg text-dark flex md:hidden active:scale-95 transition-transform"
+          aria-label="Scroll Left"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -92,21 +131,25 @@ const NewArrivals: React.FC = () => {
         {/* Scrollable Container */}
         <div 
           ref={scrollRef}
-          className="flex gap-6 overflow-x-auto hide-scrollbar scroll-smooth"
+          className="flex gap-6 overflow-x-auto hide-scrollbar scroll-smooth cursor-grab active:cursor-grabbing"
           onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          onMouseLeave={handleMouseLeave}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
         >
            {displayProducts.map((product, index) => (
-             <div key={`${product._id}-${index}`} className="w-64 md:w-72 shrink-0">
+             <div key={`${product._id}-${index}`} className="w-64 md:w-72 shrink-0 select-none">
                <ProductCard product={product} />
              </div>
            ))}
         </div>
 
-        {/* Right Button */}
+        {/* Right Button -  */}
         <button 
           onClick={scrollRight}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 p-3 rounded-full shadow-md hover:bg-white text-dark hidden group-hover:block transition-all"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 p-3 rounded-full shadow-lg text-dark flex md:hidden active:scale-95 transition-transform"
+          aria-label="Scroll Right"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
