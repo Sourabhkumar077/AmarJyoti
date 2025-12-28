@@ -5,25 +5,25 @@ const sendEmail = async (options: {
   subject: string;
   message: string;
 }) => {
-  // 1. Transporter Create karein (Postman)
+  // 1. Transporter Create karein (Explicit Settings for Railway)
   const transporter = nodemailer.createTransport({
-    service: "gmail",
-    pool: true,
-    maxConnections: 5, // Max 5 simultaneous connections
-    maxMessages: 100,
+    host: "smtp.gmail.com", // Explicit Host
+    port: 465,              // Secure SSL Port (Best for Cloud)
+    secure: true,           // True for port 465
     auth: {
       user: process.env.SMTP_EMAIL,
-      pass: process.env.SMTP_PASSWORD,
+      pass: process.env.SMTP_PASSWORD, // App Password
     },
+    // Timeout settings to prevent hanging
+    connectionTimeout: 10000, // 10 seconds
   });
 
   // 2. Email Options Define karein
   const mailOptions = {
-    from: `"Amar Jyoti Support" <${process.env.SMTP_EMAIL}>`, // Sender Name
-    to: options.email, // Receiver
+    from: `"Amar Jyoti Support" <${process.env.SMTP_EMAIL}>`, 
+    to: options.email, 
     subject: options.subject,
-    text: options.message, // Plain Text Version
-    // HTML Version
+    text: options.message, 
     html: `
       <div style="font-family: serif; padding: 20px; background-color: #f9f9f9;">
         <div style="max-width: 600px; margin: 0 auto; background: white; padding: 20px; border: 1px solid #ddd;">

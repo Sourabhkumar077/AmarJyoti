@@ -16,6 +16,8 @@ import ApiError from './utils/ApiError';
 
 const app: Application = express();
 
+app.set('trust proxy', 1);
+
 // Middleware [cite: 66]
 app.use(express.json());
 app.use(cookieParser());
