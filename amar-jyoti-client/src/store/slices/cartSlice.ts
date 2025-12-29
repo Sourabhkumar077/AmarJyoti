@@ -169,12 +169,24 @@ const cartSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCart.fulfilled, (state, action) => {
-        state.items = action.payload; 
-        state.loading = false;
+      //  Handle Pending State (Loader On)
+      .addCase(fetchCart.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
       
-     
+      .addCase(fetchCart.fulfilled, (state, action) => {
+        state.items = action.payload; 
+        state.loading = false; // Loader Off
+      })
+
+      //  Handle Error State (Loader Off)
+      .addCase(fetchCart.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      
+      
       .addCase(addToCartAsync.pending, (state, action) => {
         const { product, quantity } = action.meta.arg;
         const existingItem = state.items.find(item => item.productId === product._id);
@@ -195,11 +207,11 @@ const cartSlice = createSlice({
         state.items = action.payload; // Sync with real server data
         state.loading = false;
       })
-      .addCase(addToCartAsync.rejected, (state,) => {
+      .addCase(addToCartAsync.rejected, (state) => {
         state.loading = false;
+        
         // In a real app, you would revert the change here
       })
-
   
       .addCase(removeFromCartAsync.pending, (state, action) => {
         const productId = action.meta.arg;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { MapPin, ShieldCheck, Lock, CreditCard } from 'lucide-react';
+import { MapPin, ShieldCheck, Lock, CreditCard,PlusCircle } from 'lucide-react';
 import { useAppSelector } from '../store/hooks'; 
 import apiClient from '../api/client';
 import { State, City } from 'country-state-city';
@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  // FIXED: Added (state: any) to bypass implicit any error
+  //  Added (state: any) to bypass implicit any error
   const { items } = useAppSelector((state: any) => state.cart);
 
   // Form State
@@ -40,7 +40,7 @@ const Checkout: React.FC = () => {
   }, [items, navigate]);
 
   // 2. Calculate Totals
-  // FIXED: Added types to reduce parameters (acc: number, item: any)
+  //  Added types to reduce parameters (acc: number, item: any)
   const subtotal = items.reduce((acc: number, item: any) => {
     const price = item.product?.price || 0; 
     return acc + (price * item.quantity);
@@ -228,6 +228,15 @@ const Checkout: React.FC = () => {
                   </div>
                 ))}
               </div>
+              {/* ADD MORE PRODUCTS BUTTON (Marketing Trigger) */}
+              <button
+                type="button"
+                onClick={() => navigate('/products')}
+                className="w-full mb-6 group flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-subtle-text/30 rounded-xl text-sm font-medium text-subtle-text hover:border-accent hover:text-accent hover:bg-accent/5 transition-all duration-200"
+              >
+                <PlusCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Add More Products
+              </button>
 
               {/* Price Breakdown */}
               <div className="border-t border-subtle-text/10 pt-4 space-y-2 text-sm">
