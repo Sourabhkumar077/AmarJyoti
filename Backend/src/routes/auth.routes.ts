@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validate } from '../middlewares/zodValidation';
 import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema ,sendOtpSchema} from '../utils/zodSchemas';
-import { loginHandler, registerHandler,resetPasswordHandler, forgotPassword,updateProfileHandler ,sendOtp} from '../controllers/auth.controller';
+import { loginHandler, registerHandler,resetPasswordHandler, forgotPassword,updateProfileHandler ,sendOtp,getMe} from '../controllers/auth.controller';
 import { protect } from '../middlewares/auth.middleware';
 import rateLimit from 'express-rate-limit';
 
@@ -21,6 +21,9 @@ router.post('/register', validate(registerSchema), registerHandler);
 
 // Route: POST /api/v1/auth/login
 router.post('/login', validate(loginSchema), loginHandler);
+
+// Route : Get for getting the current user
+router.get('/me', protect, getMe);
 
 
 // Route : 

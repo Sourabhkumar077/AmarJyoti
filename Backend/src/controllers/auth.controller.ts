@@ -202,3 +202,28 @@ export const updateProfileHandler = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// 7. GET CURRENT USER 
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const user = req.user; 
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        addresses: user.addresses
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
