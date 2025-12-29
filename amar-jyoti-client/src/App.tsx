@@ -25,7 +25,7 @@ const AdminLayout = React.lazy(() => import('./components/layout/AdminLayout'));
 const Dashboard = React.lazy(() => import('./pages/admin/Dashboard'));
 const AdminOrders = React.lazy(() => import('./pages/admin/AdminOrders'));
 const Contact  = React.lazy(()=>import('./pages/Contact'));
-const Returns  = React.lazy(()=>import('./pages/Returns'));
+const Returns  = React.lazy(()=>import('./pages/ExchangePolicy'));
 const ShippingPolicy  = React.lazy(()=>import('./pages/ShippingPolicy'));
 const AdminReviews  = React.lazy(()=>import('./pages/admin/AdminReviews'));
 const PaymentVerify  = React.lazy(()=>import('./pages/PaymentVerify'));

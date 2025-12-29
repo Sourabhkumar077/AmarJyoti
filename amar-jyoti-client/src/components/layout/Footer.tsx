@@ -1,6 +1,6 @@
+import { Facebook, Instagram, Twitter } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-// import { Instagram, Facebook, Twitter } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
@@ -13,11 +13,11 @@ const Footer: React.FC = () => {
           <p className="text-gray-400 text-sm leading-relaxed mb-6">
             Celebrating the timeless elegance of Indian ethnic wear. We bring you handpicked Sarees, Suits, and Lehengas directly from the weavers.
           </p>
-          {/* <div className="flex gap-4">
+          <div className="flex gap-4">
             <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent transition-colors"><Instagram className="w-5 h-5" /></a>
             <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent transition-colors"><Facebook className="w-5 h-5" /></a>
             <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent transition-colors"><Twitter className="w-5 h-5" /></a>
-          </div> */}
+          </div>
         </div>
 
         {/* Shop */}
@@ -38,7 +38,7 @@ const Footer: React.FC = () => {
             <li><Link to="/account" className="hover:text-accent transition-colors">Track Order</Link></li>
             <li><Link to="/contact" className="hover:text-accent transition-colors">Contact Us</Link></li>
             <li><Link to="/shipping-policy" className="hover:text-accent transition-colors">Shipping Policy</Link></li>
-            <li><Link to="/returns" className="hover:text-accent transition-colors">Returns & Exchange</Link></li>
+            <li><Link to="/returns" className="hover:text-accent transition-colors">Exchange orders</Link></li>
           </ul>
         </div>
 
