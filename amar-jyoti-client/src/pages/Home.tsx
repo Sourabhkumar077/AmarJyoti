@@ -107,7 +107,7 @@ const Home: React.FC = () => {
       name: "Royal Sarees",
       description: "Banarasi, Silk & Cotton",
       image:
-        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=800",
+        "/heroSaree2.jpg",
       path: "/products?category=Saree",
     },
     {
@@ -115,7 +115,7 @@ const Home: React.FC = () => {
       name: "Elegant Suits",
       description: "Salwar Kameez & Sets",
       image:
-        "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&q=80&w=800",
+        "/Suit1.webp",
       path: "/products?category=Suit",
     },
     {
@@ -123,7 +123,7 @@ const Home: React.FC = () => {
       name: "Bridal Lehengas",
       description: "Wedding & Party Wear",
       image:
-        "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=800",
+        "/OIP (3).jpg",
       path: "/products?category=Lehenga",
     },
   ];
