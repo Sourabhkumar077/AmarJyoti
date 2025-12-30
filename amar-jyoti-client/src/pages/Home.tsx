@@ -7,6 +7,7 @@ import { fetchProducts } from "../api/products.api";
 import NewArrivals from "../components/common/NewArrivals";
 import LocationSection from "../components/common/LocationSection";
 import ServicesSection from "../components/common/ServicesSection";
+import LegacySection from '../components/home/LegacySection';
 
 const HERO_DEFAULTS = [
   {
@@ -293,6 +294,7 @@ const Home: React.FC = () => {
         </div>
       </section>
       <NewArrivals />
+      <LegacySection/>
       <ServicesSection />
       <LocationSection />
     </motion.div>
