@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ShoppingBag } from 'lucide-react';
+import { ArrowRight, ShoppingBag,PlusCircle } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { fetchCart } from '../store/slices/cartSlice'; 
 import CartItem from '../components/cart/CartItem'; 
@@ -79,8 +79,17 @@ const Cart: React.FC = () => {
                   item={item} 
                 />
               ))}
+              <button
+                              type="button"
+                              onClick={() => navigate('/products')}
+                              className="w-full mb-6 group flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-subtle-text/30 rounded-xl text-sm font-medium text-subtle-text hover:border-accent hover:text-accent hover:bg-accent/5 transition-all duration-200"
+                            >
+                              <PlusCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                              Add More Products
+                            </button>
             </div>
           </div>
+          
 
           {/* Order Summary */}
           <div className="lg:col-span-1">

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createProduct, updateProduct, uploadImage } from '../../api/admin.api';
-import { ArrowLeft, Save, UploadCloud, X, Loader2 } from 'lucide-react'; 
+import { ArrowLeft, Save, UploadCloud, X, Loader2 } from 'lucide-react';
 import { fetchProductById, fetchCategories } from '../../api/products.api';
+import CustomDropdown from '../../components/admin/CustomDropdown';
 import toast from 'react-hot-toast';
 
 const ProductForm: React.FC = () => {
@@ -11,6 +12,12 @@ const ProductForm: React.FC = () => {
   const isEditMode = !!id;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const SAREE_TYPES = [
+    "Banarasi Saree", "Silk Saree", "Banarasi Silk Saree", "Cotton Saree", "Chiffon Saree",
+    "Georgette Saree", "Linen Saree", "Organza Saree", "Crepe Saree",
+    "Satin Saree", "Net Saree", "Paithani Saree", "Kanjivaram Saree"
+  ];
 
   // Loading State for Image Uploads
   const [isUploading, setIsUploading] = useState(false);
@@ -20,34 +27,43 @@ const ProductForm: React.FC = () => {
     name: '',
     description: '',
     price: 0,
+    discount: 0,
     stock: 0,
     category: '',
     fabric: '',
     colors: '',
     image1: '',
     image2: '',
+    sizes: '',
+    sizeDescription: '',
+    subcategory: '',
   });
-
 
   // Fetch Categories for the Dropdown
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
   });
-  // ----------------------------------
 
-  //  Fetch Product Data (if editing)
+  //  LOGIC: Check selected Category Name to Hide/Show Size options
+  const selectedCategoryObj = categories?.find((c: any) => c._id === formData.category);
+  const categoryName = selectedCategoryObj?.name?.toLowerCase() || '';
+
+
+  const shouldHideSize = categoryName.includes('saree') || categoryName.includes('lehnga') || categoryName.includes('lehenga');
+
+  // Fetch Product Data (if editing)
   const { data: existingProduct } = useQuery({
     queryKey: ['product', id],
     queryFn: () => fetchProductById(id!),
     enabled: isEditMode,
   });
-  
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (formData.name || formData.price > 0) {
         e.preventDefault();
-        e.returnValue = ''; // Standard browser warning
+        e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -61,22 +77,31 @@ const ProductForm: React.FC = () => {
         name: existingProduct.name,
         description: existingProduct.description,
         price: existingProduct.price,
+        discount: existingProduct.discount || 0,
         stock: existingProduct.stock,
         category: typeof existingProduct.category === 'object' ? existingProduct.category._id : existingProduct.category,
         fabric: existingProduct.fabric || '',
         colors: existingProduct.colors ? existingProduct.colors.join(', ') : '',
         image1: existingProduct.images?.[0] || '',
         image2: existingProduct.images?.[1] || '',
+        //  Populate Sizes
+        sizes: existingProduct.sizes ? existingProduct.sizes.join(', ') : '',
+        sizeDescription: existingProduct.sizeDescription || '',
+        subcategory: existingProduct.subcategory || '',
       });
     }
   }, [existingProduct]);
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
+      //  Payload Update
       const payload = {
         ...data,
         colors: data.colors.split(',').map((c: string) => c.trim()),
-        images: [data.image1, data.image2].filter(Boolean)
+        images: [data.image1, data.image2].filter(Boolean),
+        // Logic: If hidden, send empty array. Else split string to array.
+        sizes: shouldHideSize ? [] : (data.sizes ? data.sizes.split(',').map((s: string) => s.trim()) : []),
+        sizeDescription: shouldHideSize ? '' : data.sizeDescription
       };
 
       if (isEditMode) return updateProduct(id!, payload);
@@ -100,7 +125,6 @@ const ProductForm: React.FC = () => {
     setIsUploading(true);
     try {
       const data = await uploadImage(file);
-      // Save the URL returned from backend to the form state
       setFormData(prev => ({ ...prev, [fieldName]: data.url }));
       toast.success("Image uploaded!");
     } catch (error) {
@@ -144,7 +168,8 @@ const ProductForm: React.FC = () => {
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
-            {/* --- CATEGORY DROPDOWN --- */}
+
+            {/*  UPDATED CATEGORY DROPDOWN */}
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
               <select
@@ -155,7 +180,7 @@ const ProductForm: React.FC = () => {
               >
                 <option value="">Select Category</option>
                 {isLoadingCategories ? (
-                  <option disabled>Loading...</option>
+                  <option disabled>Loading categories...</option>
                 ) : (
                   categories?.map((cat: any) => (
                     <option key={cat._id} value={cat._id}>
@@ -165,7 +190,34 @@ const ProductForm: React.FC = () => {
                 )}
               </select>
             </div>
-            {/* ---------------------------------- */}
+            {categories?.find((c: any) => c._id === formData.category)?.name?.toLowerCase().includes('saree') && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-500 mt-6">
+                <label className="text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-accent rounded-full inline-block"></span>
+                  Saree Type (Sub-Category)
+                </label>
+
+                {/* Custom Component Here */}
+                <CustomDropdown
+                  options={[...SAREE_TYPES, "Other"]} // 'Other' option bhi pass kiya
+                  value={formData.subcategory}
+                  onChange={(val :any) => setFormData({ ...formData, subcategory: val })}
+                  placeholder="Select Saree Fabric/Type"
+                />
+
+                {/* Custom Input for 'Other' */}
+                {formData.subcategory === 'Other' && (
+                  <div className="mt-3 animate-in fade-in slide-in-from-top-1">
+                    <input
+                      type="text"
+                      placeholder="Type custom saree type here..."
+                      className="w-full border-2 border-dashed border-accent/50 bg-accent/5 p-3 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-sm"
+                      onChange={e => setFormData({ ...formData, subcategory: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -182,7 +234,7 @@ const ProductForm: React.FC = () => {
           {/* Pricing & Stock */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium mb-1">Price (₹)</label>
+              <label className="block text-sm font-medium mb-1">MRP(Price) (₹)</label>
               <input
                 required
                 type="number"
@@ -190,6 +242,26 @@ const ProductForm: React.FC = () => {
                 value={formData.price}
                 onChange={e => setFormData({ ...formData, price: Number(e.target.value) })}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Discount (%)</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  max="99"
+                  className="w-full border p-2 rounded focus:ring-accent focus:border-accent pr-8"
+                  value={formData.discount}
+                  onChange={e => setFormData({ ...formData, discount: Number(e.target.value) })}
+                />
+                <span className="absolute right-3 top-2 text-gray-500 text-sm">%</span>
+              </div>
+              {/* Shows Sale Price automatically */}
+              {formData.price > 0 && formData.discount > 0 && (
+                <p className="text-xs text-green-600 mt-1 font-bold">
+                  Final Price: ₹{Math.round(formData.price - (formData.price * formData.discount / 100))}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Stock Quantity</label>
@@ -212,7 +284,37 @@ const ProductForm: React.FC = () => {
             </div>
           </div>
 
-          {/* ---  IMAGE UPLOADER SECTION --- */}
+          {/*  CONDITIONAL SIZE CONFIGURATION SECTION */}
+          {!shouldHideSize && (
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
+              <h3 className="font-bold text-dark mb-4">Size Configuration</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Available Sizes (Comma separated)</label>
+                  <input
+                    type="text"
+                    placeholder="S, M, L, XL, XXL"
+                    className="w-full border p-2 rounded focus:ring-accent focus:border-accent"
+                    value={formData.sizes}
+                    onChange={e => setFormData({ ...formData, sizes: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Example: M, L, XL (Leave blank for Free Size)</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Size Chart / Description</label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. M: Chest 38, L: Chest 40 (Inches)"
+                    className="w-full border p-2 rounded focus:ring-accent focus:border-accent"
+                    value={formData.sizeDescription}
+                    onChange={e => setFormData({ ...formData, sizeDescription: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- IMAGE UPLOADER SECTION --- */}
           <div className="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300">
             <h3 className="text-sm font-medium mb-4 flex items-center text-dark">
               <UploadCloud className="w-4 h-4 mr-2" /> Product Images
@@ -280,7 +382,6 @@ const ProductForm: React.FC = () => {
 
             </div>
           </div>
-          {/* ---------------------------------- */}
 
           <div>
             <label className="block text-sm font-medium mb-1">Colors (Comma separated)</label>

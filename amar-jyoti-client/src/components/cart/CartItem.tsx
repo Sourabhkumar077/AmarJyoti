@@ -16,38 +16,34 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
-  // Handle Quantity Change
   const handleQuantityChange = (newQty: number) => {
     if (newQty < 1) return;
 
     if (user) {
-      // Logged In: Server Update
       dispatch(updateCartItemAsync({
         productId: item.productId,
         quantity: newQty
       }));
     } else {
-      // Guest: Local Update
-      dispatch(updateCartItemLocal({ id: item.productId, quantity: newQty }));
+      // For local cart, we should ideally use size to identify item too.
+      // But for now keeping it simple as per slice implementation
+      dispatch(updateCartItemLocal({ id: item.productId, quantity: newQty, size: item.size }));
     }
   };
 
-  
   const handleRemove = () => {
-   
     if (user) {
       const idToSend = item.productId || item.product._id;
-      console.log("[Frontend] Sending ID to Backend:", idToSend);
-      dispatch(removeFromCartAsync(idToSend));
+      //  Pass Size for removal
+      dispatch(removeFromCartAsync({id: idToSend, size: item.size,color: item.color}));
     } else {
-      console.log("[Frontend] Removing from Local/Guest Cart:", item.productId);
-      dispatch(removeFromCartLocal(item.productId));
+      //  Pass Size for local removal
+      dispatch(removeFromCartLocal({id: item.productId, size: item.size, color: item.color}));
     }
   };
 
   return (
     <div className="flex gap-4 py-4 border-b border-subtle-text/10">
-      {/* Product Image */}
       <div className="w-24 h-32 shrink-0 bg-gray-100 rounded-md overflow-hidden">
         <img
           src={item.product?.images?.[0] || 'https://via.placeholder.com/150'}
@@ -56,7 +52,6 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
         />
       </div>
 
-      {/* Product Details */}
       <div className="flex-1 flex flex-col justify-between">
         <div>
           <div className="flex justify-between items-start">
@@ -71,10 +66,28 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
           <p className="text-sm text-subtle-text mt-1">
             {item.product?.category?.name || 'Ethnic Wear'}
           </p>
+
+          {/*  Display Size Badge if size exists */}
+          {item.size && (
+            <span className="text-xs font-medium text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded inline-block">
+              Size: {item.size}
+            </span>
+          )}
+          {/* color badge */}
+          {item.color && (
+               <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded flex items-center gap-1">
+                 Color: 
+                 <span 
+                   className="w-3 h-3 rounded-full border border-gray-300 inline-block" 
+                   style={{ backgroundColor: item.color.toLowerCase() }}
+                 />
+                 {item.color}
+               </span>
+             )}
+
           <p className="font-medium text-dark mt-2">₹{item.product?.price?.toLocaleString('en-IN')}</p>
         </div>
 
-        {/* Quantity Controls */}
         <div className="flex items-center gap-3">
           <div className="flex items-center border border-subtle-text/20 rounded-md">
             <button

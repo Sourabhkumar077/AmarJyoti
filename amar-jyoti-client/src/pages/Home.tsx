@@ -7,6 +7,7 @@ import { fetchProducts } from "../api/products.api";
 import NewArrivals from "../components/common/NewArrivals";
 import LocationSection from "../components/common/LocationSection";
 import ServicesSection from "../components/common/ServicesSection";
+import LegacySection from '../components/home/LegacySection';
 
 const HERO_DEFAULTS = [
   {
@@ -17,7 +18,6 @@ const HERO_DEFAULTS = [
     stock: 10,
     isActive: true,
     link: "/products?category=Lehenga",
-    // Added Dummy Fields to satisfy Product Interface
     description: "Exclusive Bridal Lehenga",
     category: { _id: "cat_1", name: "Lehenga" as const },
     fabric: "Silk",
@@ -31,7 +31,6 @@ const HERO_DEFAULTS = [
     stock: 10,
     isActive: true,
     link: "/products?category=Saree",
-    // Dummy Fields
     description: "Authentic Banarasi Saree",
     category: { _id: "cat_2", name: "Saree" as const },
     fabric: "Silk",
@@ -45,7 +44,6 @@ const HERO_DEFAULTS = [
     stock: 10,
     isActive: true,
     link: "/products?category=Suit",
-
     description: "Designer Party Wear Suit",
     category: { _id: "cat_3", name: "Suit" as const },
     fabric: "Georgette",
@@ -77,25 +75,28 @@ const Home: React.FC = () => {
     visible: { y: 0, opacity: 1 },
   };
 
-  const { data: products } = useQuery({
+  // ✅ FIX: Updated useQuery to handle new response structure
+  const { data } = useQuery({
     queryKey: ["hero-products"],
-    queryFn: () => fetchProducts({ sortBy: "newest" }),
-    //  Cast to 'any' to bypass strict type check for the extra 'link' property
-    // while keeping the instant loading benefit.
-    placeholderData: HERO_DEFAULTS as any,
+    queryFn: () => fetchProducts({ 
+        sortBy: "newest", 
+        limit: 4 // Only fetch 4 for hero section (optimization)
+    }),
     staleTime: 1000 * 60 * 5,
   });
 
+  // ✅ FIX: Extract products array safely
+  const fetchedProducts = data?.products || [];
+
   // --- LOGIC: Select Top 4 Products ---
   const activeHeroProducts = useMemo(() => {
-    const sourceData =
-      products && products.length > 0 ? products : HERO_DEFAULTS;
+    // Agar API se data aya to wo use karo, warna Default wala
+    const sourceData = fetchedProducts.length > 0 ? fetchedProducts : HERO_DEFAULTS;
 
-    // We accept 'any' here because sourceData can be mixed types (Product or Placeholder)
     return (sourceData as any[])
       .filter((p: any) => p.stock > 0 && p.isActive !== false)
       .slice(0, 4);
-  }, [products]);
+  }, [fetchedProducts]);
 
   const leftColProducts = activeHeroProducts.slice(0, 2);
   const rightColProducts = activeHeroProducts.slice(2, 4);
@@ -106,24 +107,21 @@ const Home: React.FC = () => {
       id: "saree",
       name: "Royal Sarees",
       description: "Banarasi, Silk & Cotton",
-      image:
-        "/heroSaree2.jpg",
+      image: "/heroSaree2.jpg",
       path: "/products?category=Saree",
     },
     {
       id: "suit",
       name: "Elegant Suits",
       description: "Salwar Kameez & Sets",
-      image:
-        "/Suit1.webp",
+      image: "/Suit1.webp",
       path: "/products?category=Suit",
     },
     {
       id: "lehenga",
       name: "Bridal Lehengas",
       description: "Wedding & Party Wear",
-      image:
-        "/OIP (3).jpg",
+      image: "/OIP (3).jpg",
       path: "/products?category=Lehenga",
     },
   ];
@@ -156,12 +154,6 @@ const Home: React.FC = () => {
             <h4 className="text-white font-serif font-medium truncate text-lg">
               {product.name}
             </h4>
-            <div className="flex justify-between items-center mt-1">
-              {/* <span className="text-accent font-bold text-base">₹{product.price.toLocaleString('en-IN')}</span> */}
-              {/* <span className="bg-white/20 p-2 rounded-full backdrop-blur-md hover:bg-white hover:text-dark transition-colors">
-                <ShoppingBag className="w-4 h-4" />
-              </span> */}
-            </div>
           </div>
         </div>
       </Link>
@@ -293,6 +285,7 @@ const Home: React.FC = () => {
         </div>
       </section>
       <NewArrivals />
+      <LegacySection/>
       <ServicesSection />
       <LocationSection />
     </motion.div>

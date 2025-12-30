@@ -17,14 +17,34 @@ export interface Product {
   isActive: boolean;
   ratings?: number;
   numOfReviews?: number;
+  sizes?: string[]; 
+  sizeDescription?: string;
+  discount: number;
+  salePrice: number;
+  subcategory?: string;
 }
 
-interface ProductFilters {
+// 1. New Response Interface (Matches Backend Structure)
+export interface ProductsResponse {
+  products: Product[];
+  pagination: {
+    totalProducts: number;
+    totalPages: number;
+    currentPage: number;
+    itemsPerPage: number;
+  };
+}
+
+// 2. Updated Filters Interface with Pagination
+export interface ProductFilters {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
-  sortBy?: string; // 'newest' | 'price_asc' | 'price_desc'
+  sortBy?: string; 
   search?: string; 
+  subcategory?: string;
+  page?: number;   
+  limit?: number;  
 }
 
 export interface Category {
@@ -32,8 +52,8 @@ export interface Category {
   name: string;
 }
 
-//  Fetch Products
-export const fetchProducts = async (filters: ProductFilters): Promise<Product[]> => {
+// 3. Fetch Products (Returns ProductsResponse)
+export const fetchProducts = async (filters: ProductFilters): Promise<ProductsResponse> => {
   const params = new URLSearchParams();
   
   if (filters.category) params.append('category', filters.category);
@@ -41,25 +61,26 @@ export const fetchProducts = async (filters: ProductFilters): Promise<Product[]>
   if (filters.maxPrice) params.append('max', filters.maxPrice.toString());
   if (filters.sortBy) params.append('sortBy', filters.sortBy);
   if (filters.search) params.append('search', filters.search);
+  if (filters.subcategory) params.append('subcategory', filters.subcategory);
 
-  // Note: We don't use <{ products: Product[] }> generic here because 
-  // the wrapper is actually your ApiResponse object
+  // Append Pagination Params
+  params.append('page', (filters.page || 1).toString());
+  params.append('limit', (filters.limit || 12).toString());
+
   const response = await apiClient.get(`/products?${params.toString()}`);
   
-  // FIX: Access .data.data because your backend returns new ApiResponse(200, data, ...)
+  // Return the data object which contains products array and pagination object
   return response.data.data; 
 };
 
-// ✅ FIXED: Fetch Single Product
+// Fetch Single Product
 export const fetchProductById = async (id: string): Promise<Product> => {
   const response = await apiClient.get(`/products/${id}`);
-  // FIX: Access .data.data here too
   return response.data.data || response.data; 
 };
 
-// ✅ FIXED: Fetch Categories
+// Fetch Categories
 export const fetchCategories = async (): Promise<Category[]> => {
   const response = await apiClient.get('/categories');
-  // FIX: Access .data.data here too
-  return response.data.data;
+  return response.data.data || response.data;
 };
