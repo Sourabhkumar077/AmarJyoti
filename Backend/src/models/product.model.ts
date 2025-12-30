@@ -10,6 +10,8 @@ export interface IProduct extends Document {
   colors: string[];
   images: string[]; // Array of ImageKit URLs 
   isActive: boolean;
+  sizes: string[]; // Available sizes ['S', 'M', 'L']
+  sizeDescription: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +28,8 @@ const ProductSchema: Schema = new Schema(
     price: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0, default: 0 },
     fabric: { type: String, required: true },
+    sizes: [{ type: String }], 
+    sizeDescription: { type: String, default: '' },
     colors: [{ type: String }], // Array of color names/codes
     images: [{ type: String, required: true }], // URLs from ImageKit
     isActive: { type: Boolean, default: true },

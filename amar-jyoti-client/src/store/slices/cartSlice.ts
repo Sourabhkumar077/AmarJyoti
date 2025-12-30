@@ -7,6 +7,7 @@ interface CartItem {
   product: any; 
   productId: string; 
   quantity: number;
+  size?: string; //  Added size property
   _id?: string;
 }
 
@@ -21,16 +22,15 @@ const formatCartItems = (items: any[]): CartItem[] => {
   if (!items || !Array.isArray(items)) return [];
   
   return items.map((item) => {
-    // If product is missing (deleted from DB), marked as null
     const product = item.product;
     return {
       product: product,
       productId: product?._id || "unknown", 
       quantity: item.quantity,
+      size: item.size, //  Map size from backend
       _id: item._id
     };
   })
-  // 🛑 FILTER: Remove "Ghost" items (null products)
   .filter(item => item.product && item.productId !== "unknown");
 };
 
@@ -44,7 +44,6 @@ const initialState: CartState = {
 
 // --- Async Thunks ---
 
-// 1. Fetch Cart
 export const fetchCart = createAsyncThunk(
   'cart/fetchCart', 
   async (_, { rejectWithValue }) => {
@@ -57,17 +56,16 @@ export const fetchCart = createAsyncThunk(
   }
 );
 
-// 2. Add to Cart (OPTIMISTIC)
+//  UPDATED: Add Size to Payload
 export const addToCartAsync = createAsyncThunk(
   'cart/addToCart',
-  // We accept the WHOLE product object, not just ID
-  async ({ product, quantity }: { product: any; quantity: number }, { rejectWithValue }) => {
+  async ({ product, quantity, size }: { product: any; quantity: number, size?: string }, { rejectWithValue }) => {
     try {
       const response = await apiClient.post('/cart/add', { 
         productId: product._id, 
-        quantity 
+        quantity,
+        size //  Send size
       });
-      
       toast.success("Added to cart");
       return formatCartItems(response.data.items);
     } catch (error: any) {
@@ -77,12 +75,14 @@ export const addToCartAsync = createAsyncThunk(
   }
 );
 
-// 3. Remove Item
+//  UPDATED: Remove with Size
 export const removeFromCartAsync = createAsyncThunk(
   'cart/removeFromCart',
-  async (productId: string, { rejectWithValue }) => {
+  async ({id, size}: {id: string, size?: string}, { rejectWithValue }) => {
     try {
-      const response = await apiClient.delete(`/cart/remove/${productId}`);
+      //  Pass size as query param
+      const url = size ? `/cart/remove/${id}?size=${size}` : `/cart/remove/${id}`;
+      const response = await apiClient.delete(url);
       toast.success("Removed from cart"); 
       return formatCartItems(response.data.items);
     } catch (error: any) {
@@ -92,7 +92,6 @@ export const removeFromCartAsync = createAsyncThunk(
   }
 );
 
-// 4. Update Quantity
 export const updateCartItemAsync = createAsyncThunk(
   'cart/updateCartItem',
   async ({ productId, quantity }: { productId: string; quantity: number }, { rejectWithValue }) => {
@@ -106,7 +105,7 @@ export const updateCartItemAsync = createAsyncThunk(
   }
 );
 
-// 5. Merge Guest Cart
+//  UPDATED: Merge with Size
 export const mergeGuestCart = createAsyncThunk(
   'cart/mergeGuestCart',
   async (_, { rejectWithValue }) => {
@@ -119,12 +118,12 @@ export const mergeGuestCart = createAsyncThunk(
 
       const payload = guestItems.map((item: CartItem) => ({
         productId: item.productId || item.product?._id,
-        quantity: item.quantity
+        quantity: item.quantity,
+        size: item.size //  Include size in merge payload
       }));
 
       const response = await apiClient.post('/cart/merge', { items: payload });
       localStorage.removeItem('guest_cart');
-      
       return formatCartItems(response.data.items);
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message);
@@ -136,10 +135,14 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    // Guest Actions
+    // Guest Actions (Updated for Size)
     addToCartLocal: (state, action: PayloadAction<CartItem>) => {
       const newItem = action.payload;
-      const existingItem = state.items.find(item => item.productId === newItem.productId);
+      //  Find strict match (ID + Size)
+      const existingItem = state.items.find(item => 
+        item.productId === newItem.productId && item.size === newItem.size
+      );
+
       if (existingItem) {
         existingItem.quantity += newItem.quantity;
       } else {
@@ -148,13 +151,24 @@ const cartSlice = createSlice({
       localStorage.setItem('guest_cart', JSON.stringify(state.items));
       toast.success("Added to cart");
     },
-    removeFromCartLocal: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter(item => item.productId !== action.payload);
-      localStorage.setItem('guest_cart', JSON.stringify(state.items));
-      toast.success("Removed from cart");
+    removeFromCartLocal: (state, action: PayloadAction<{id: string, size?: string}>) => {
+       //  Filter by ID and Size
+       state.items = state.items.filter(item => {
+          // Keep item if ID matches BUT Size is different
+          if (item.productId === action.payload.id && item.size !== action.payload.size) return true;
+          // Keep item if ID is different
+          if (item.productId !== action.payload.id) return true;
+          // Remove if both match
+          return false;
+       });
+       localStorage.setItem('guest_cart', JSON.stringify(state.items));
+       toast.success("Removed from cart");
     },
-    updateCartItemLocal: (state, action: PayloadAction<{id: string, quantity: number}>) => {
-      const item = state.items.find(item => item.productId === action.payload.id);
+    updateCartItemLocal: (state, action: PayloadAction<{id: string, quantity: number, size?: string}>) => {
+      //  Update specific item size
+      const item = state.items.find(item => 
+        item.productId === action.payload.id && item.size === action.payload.size
+      );
       if (item) item.quantity = action.payload.quantity;
       localStorage.setItem('guest_cart', JSON.stringify(state.items));
     },
@@ -169,62 +183,36 @@ const cartSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      //  Handle Pending State (Loader On)
       .addCase(fetchCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.items = action.payload; 
-        state.loading = false; // Loader Off
+        state.loading = false;
       })
-
-      //  Handle Error State (Loader Off)
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
       
-      
-      .addCase(addToCartAsync.pending, (state, action) => {
-        const { product, quantity } = action.meta.arg;
-        const existingItem = state.items.find(item => item.productId === product._id);
-        
-        if (existingItem) {
-          existingItem.quantity += quantity;
-        } else {
-          // Add temporary item immediately
-          state.items.push({
-            product: product,
-            productId: product._id,
-            quantity: quantity,
-            _id: "temp-id" 
-          });
-        }
-      })
+      // AddToCart
       .addCase(addToCartAsync.fulfilled, (state, action) => {
-        state.items = action.payload; // Sync with real server data
+        state.items = action.payload; 
         state.loading = false;
       })
-      .addCase(addToCartAsync.rejected, (state) => {
-        state.loading = false;
-        
-        // In a real app, you would revert the change here
-      })
-  
-      .addCase(removeFromCartAsync.pending, (state, action) => {
-        const productId = action.meta.arg;
-        state.items = state.items.filter(item => item.productId !== productId);
-      })
+      
+      // RemoveFromCart
       .addCase(removeFromCartAsync.fulfilled, (state, action) => {
         state.items = action.payload;
       })
-
+      
+      // Update
       .addCase(updateCartItemAsync.fulfilled, (state, action) => {
         state.items = action.payload;
-        state.loading = false;
       })
+      
+      // Merge
       .addCase(mergeGuestCart.fulfilled, (state, action) => {
         if(action.payload) state.items = action.payload;
       });

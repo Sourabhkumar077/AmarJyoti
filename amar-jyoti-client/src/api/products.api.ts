@@ -17,6 +17,8 @@ export interface Product {
   isActive: boolean;
   ratings?: number;
   numOfReviews?: number;
+  sizes?: string[]; 
+  sizeDescription?: string;
 }
 
 interface ProductFilters {
@@ -47,7 +49,7 @@ export const fetchProducts = async (filters: ProductFilters): Promise<Product[]>
   const response = await apiClient.get(`/products?${params.toString()}`);
   
   // FIX: Access .data.data because your backend returns new ApiResponse(200, data, ...)
-  return response.data.data; 
+  return response.data.data || response.data; 
 };
 
 // ✅ FIXED: Fetch Single Product
@@ -61,5 +63,5 @@ export const fetchProductById = async (id: string): Promise<Product> => {
 export const fetchCategories = async (): Promise<Category[]> => {
   const response = await apiClient.get('/categories');
   // FIX: Access .data.data here too
-  return response.data.data;
+  return response.data.data || response.data;
 };

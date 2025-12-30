@@ -1,9 +1,10 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 // Interface for a single item in the cart
 interface ICartItem {
   product: mongoose.Types.ObjectId;
   quantity: number;
+  size?: string;
 }
 
 // Interface for the Cart Document
@@ -15,32 +16,34 @@ export interface ICart extends Document {
 
 const CartSchema: Schema = new Schema(
   {
-    user: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User', 
-      required: true, 
-      unique: true 
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
     },
     items: [
       {
-        product: { 
-          type: mongoose.Schema.Types.ObjectId, 
-          ref: 'Product', 
-          required: true 
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
         },
-        quantity: { 
-          type: Number, 
-          required: true, 
+        quantity: {
+          type: Number,
+          required: true,
           min: 1,
-          default: 1 
-        }
-      }
-    ]
+          default: 1,
+        },
+        size: { type: String },
+      },
+    ],
   },
-  { 
+
+  {
     timestamps: true,
-    versionKey: false 
+    versionKey: false,
   }
 );
 
-export default mongoose.model<ICart>('Cart', CartSchema);
+export default mongoose.model<ICart>("Cart", CartSchema);
