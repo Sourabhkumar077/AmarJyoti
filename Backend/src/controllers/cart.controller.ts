@@ -20,11 +20,11 @@ export const getCartHandler = async (req: Request, res: Response) => {
 
 export const addToCartHandler = async (req: Request, res: Response) => {
   try {
-    // ✅ Receive 'size' from body
-    const { productId, quantity, size } = req.body;
     
-    // ✅ Pass 'size' to service
-    const cart = await cartService.addItemToCart(getUserId(req), productId, quantity, size);
+    const { productId, quantity, size,color } = req.body;
+    
+    //  Pass 'size' to service
+    const cart = await cartService.addItemToCart(getUserId(req), productId, quantity, size,color);
     res.status(200).json({ message: "Item added to cart", cart });
   } catch (error: any) {
     if (error.message === 'Insufficient stock') {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShoppingCart, Star, Trash2, User, Edit3, Ruler } from 'lucide-react'; 
+import { ShoppingCart, Star, Trash2, User, Edit3, Ruler, Check } from 'lucide-react';
 import { fetchProductById } from '../api/products.api';
 import { fetchProductReviews, addReview, deleteReview, updateReview } from '../api/reviews.api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -19,8 +19,9 @@ const ProductDetail: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
 
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<string>(''); 
-  
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
+
   //  STATE 2: Modal Open State
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
 
@@ -94,15 +95,20 @@ const ProductDetail: React.FC = () => {
         toast.error("Please select a size first!");
         return;
       }
+      if (product.colors && product.colors.length > 0 && !selectedColor) {
+        toast.error("Please select a color first!");
+        return;
+      }
 
       if (user) {
-        dispatch(addToCartAsync({ product: product, quantity: 1, size: selectedSize }));
+        dispatch(addToCartAsync({ product: product, quantity: 1, size: selectedSize, color: selectedColor }));
       } else {
-        dispatch(addToCartLocal({ 
-          productId: product._id, 
-          quantity: 1, 
+        dispatch(addToCartLocal({
+          productId: product._id,
+          quantity: 1,
           product: product,
-          size: selectedSize 
+          size: selectedSize,
+          color: selectedColor
         }));
       }
     }
@@ -144,10 +150,6 @@ const ProductDetail: React.FC = () => {
 
   return (
     <>
-      {/*  WRAPPER CHANGE: 
-        Humne puri div ko ek Fragment <>...</> mein wrap kiya hai 
-        taki SizeChartModal ko hum sabse neeche rakh sakein.
-      */}
       <div className="bg-primary/10 min-h-screen py-10">
         <div className="container mx-auto px-4 md:px-8">
 
@@ -184,24 +186,24 @@ const ProductDetail: React.FC = () => {
                 <div className="py-4 border-t border-b border-gray-100">
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-bold text-dark">Select Size</span>
-                    
+
                     {/*  BUTTON 3: "Size Guide" button added (Opens Modal) */}
-                    <button 
+                    <button
                       onClick={() => setIsSizeChartOpen(true)}
                       className="text-xs text-accent flex items-center gap-1 border-b border-dashed border-accent hover:text-yellow-600 font-medium cursor-pointer transition-colors"
                     >
                       <Ruler className="w-3 h-3" /> Size Guide
                     </button>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-3">
                     {product.sizes.map((size: string) => (
                       <button
                         key={size}
                         onClick={() => setSelectedSize(size)}
-                        className={`min-w-[3rem] h-10 px-3 rounded-md border text-sm font-medium transition-all
-                          ${selectedSize === size 
-                            ? 'bg-accent text-white border-accent shadow-md scale-105' 
+                        className={`min-w-12 h-10 px-3 rounded-md border text-sm font-medium transition-all
+                          ${selectedSize === size
+                            ? 'bg-accent text-white border-accent shadow-md scale-105'
                             : 'bg-white text-gray-600 border-gray-300 hover:border-accent hover:text-accent hover:bg-yellow-50'
                           }`}
                       >
@@ -211,6 +213,32 @@ const ProductDetail: React.FC = () => {
                   </div>
                 </div>
               )}
+              {/* Color selecting section */}
+              {product.colors && product.colors.length > 0 && (
+              <div className="py-4 border-b border-gray-100">
+                <p className="font-bold text-dark mb-3">Select Color: <span className="text-accent font-normal capitalize">{selectedColor}</span></p>
+                <div className="flex flex-wrap gap-3">
+                  {product.colors.map((color: string) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-200 shadow-sm
+                        ${selectedColor === color 
+                          ? 'border-dark scale-110 ring-2 ring-offset-1 ring-dark' 
+                          : 'border-gray-200 hover:scale-105'
+                        }`}
+                      style={{ backgroundColor: color.toLowerCase() }} // Use CSS color name/hex
+                      title={color}
+                    >
+                      {/* Checkmark overlay for active state */}
+                      {selectedColor === color && (
+                        <Check className={`w-5 h-5 drop-shadow-md ${['white', 'yellow', 'cream', 'beige', 'ivory'].includes(color.toLowerCase()) ? 'text-black' : 'text-white'}`} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
               <div className="pt-6 border-t border-gray-100">
                 <button onClick={handleAddToCart} className="w-full md:w-auto px-8 py-3 bg-dark text-white rounded-md hover:bg-black transition flex items-center justify-center gap-2 shadow-lg">
@@ -335,9 +363,9 @@ const ProductDetail: React.FC = () => {
         </div>
       </div>
 
-      
-      <SizeChartModal 
-        isOpen={isSizeChartOpen} 
+
+      <SizeChartModal
+        isOpen={isSizeChartOpen}
         onClose={() => setIsSizeChartOpen(false)}
         category={product.category?.name || 'Suit'}
       />

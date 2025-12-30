@@ -9,7 +9,7 @@ const populateCart = async (cart: any) => {
   if (!cart) return null;
   return await cart.populate({
     path: 'items.product',
-    select: 'name price images stock slug category sizes' // Added 'sizes' to selection
+    select: 'name price images stock slug category colors sizes'
   });
 };
 
@@ -45,8 +45,8 @@ export const getCart = async (userId: string) => {
   }
 };
 
-//  Accept 'size' argument
-export const addItemToCart = async (userId: string, productId: string, quantity: number, size?: string) => {
+
+export const addItemToCart = async (userId: string, productId: string, quantity: number, size?: string,color?: string) => {
   try {
     let cart = await cartRepo.findCartByUserId(userId);
     if (!cart) cart = await cartRepo.createCart(userId);
@@ -64,15 +64,16 @@ export const addItemToCart = async (userId: string, productId: string, quantity:
       const isSameProduct = pId === productId;
       // Handle optional size: matches if both are same string OR both are undefined/null
       const isSameSize = (item.size === size) || (!item.size && !size);
+      const isSameColor = item.color === color || (!item.color && !color);
       
-      return isSameProduct && isSameSize;
+      return isSameProduct && isSameSize && isSameColor;
     });
 
     if (itemIndex > -1) {
       cart.items[itemIndex].quantity += quantity;
     } else {
       //  Add new item with Size
-      cart.items.push({ product: product._id, quantity, size } as any);
+      cart.items.push({ product: product._id, quantity, size,color } as any);
     }
 
     await cartRepo.saveCart(cart);
@@ -84,7 +85,7 @@ export const addItemToCart = async (userId: string, productId: string, quantity:
 };
 
 //  Update Quantity (Optional: You can enhance to target specific size if needed later)
-export const updateItemQuantity = async (userId: string, productId: string, quantity: number) => {
+export const updateItemQuantity = async (userId: string, productId: string, quantity: number,) => {
   try {
     const cart = await cartRepo.findCartByUserId(userId);
     if (!cart) throw new Error('Cart not found');
@@ -115,23 +116,24 @@ export const updateItemQuantity = async (userId: string, productId: string, quan
 };
 
 
-export const removeItem = async (userId: string, productId: string, size?: string) => {
+export const removeItem = async (userId: string, productId: string, size?: string,color?: string) => {
   try {
     const cart = await cartRepo.findCartByUserId(userId);
     if (!cart) throw new Error('Cart not found');
 
-    // ✅ Filter logic: Keep items that DO NOT match (ID + Size)
+    //  Filter logic: Keep items that DO NOT match (ID + Size)
     cart.items = cart.items.filter(item => {
       if (!item.product) return false;
       const pId = (item.product as any)._id ? (item.product as any)._id.toString() : item.product.toString();
         
       if (pId !== productId) return true; // Keep other products
 
-      // If product matches, check size
-      if (size && item.size === size) return false; // Remove if size matches
-      if (!size && !item.size) return false; // Remove if no size (legacy/saree)
+      // If product matches, check attributes
+      const matchSize = item.size === size || (!item.size && !size);
+      const matchColor = item.color === color || (!item.color && !color);
 
-      return true; // Keep mismatching sizes
+      if (matchSize && matchColor) return false;
+      return true;
     });
     
     await cartRepo.saveCart(cart);
@@ -155,15 +157,15 @@ export const clearCart = async (userId: string) => {
   }
 };
 
-//  Merge Logic to respect sizes
-export const mergeCarts = async (userId: string, guestItems: { productId: string, quantity: number, size?: string }[]) => {
+//  Merge Logic to respect sizes & color
+export const mergeCarts = async (userId: string, guestItems: { productId: string, quantity: number, size?: string,color?: string }[]) => {
   try {
     let cart = await Cart.findOne({ user: userId });
     
     // Key format: "productId:size" to distinguish items
     const productMap = new Map<string, number>();
-
-    const generateKey = (pId: string, sz?: string) => `${pId}:${sz || ''}`;
+    // Key Generator: ProductID:Size:Color
+    const generateKey = (pId: string, sz?: string,c?: string) => `${pId}:${sz||''}:${c||''}`;
 
     if (cart) {
       cart.items.forEach((item: any) => {
@@ -178,18 +180,19 @@ export const mergeCarts = async (userId: string, guestItems: { productId: string
     // Merge Guest Items
     guestItems.forEach((item) => {
       if(!item.productId) return;
-      const key = generateKey(item.productId, item.size);
+      const key = generateKey(item.productId, item.size,item.color);
       const currentQty = productMap.get(key) || 0;
       productMap.set(key, currentQty + item.quantity);
     });
 
     // Reconstruct Items Array
     const mergedItems = Array.from(productMap.entries()).map(([key, quantity]) => {
-      const [productId, size] = key.split(':');
+      const [productId, size,color] = key.split(':');
       return {
         product: new mongoose.Types.ObjectId(productId),
         quantity: quantity,
-        size: size || undefined
+        size: size || undefined,
+        color: color || undefined
       };
     });
 

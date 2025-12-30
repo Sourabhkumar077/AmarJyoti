@@ -5,6 +5,7 @@ interface ICartItem {
   product: mongoose.Types.ObjectId;
   quantity: number;
   size?: string;
+  color?: string;
 }
 
 // Interface for the Cart Document
@@ -36,6 +37,7 @@ const CartSchema: Schema = new Schema(
           default: 1,
         },
         size: { type: String },
+        color: { type: String }
       },
     ],
   },
