@@ -170,6 +170,29 @@ const ProductDetail: React.FC = () => {
 
             <div className="space-y-6">
               <h1 className="text-3xl font-serif text-dark">{product.name}</h1>
+              <div className="flex items-center gap-3">
+                {product.discount > 0 ? (
+                  <>
+                    {/* Sale Price (Bold & Big) */}
+                    <p className="text-3xl font-bold text-accent">
+                      ₹{product.salePrice.toLocaleString('en-IN')}
+                    </p>
+                    {/* Original Price (Crossed Out) */}
+                    <p className="text-xl text-gray-400 line-through">
+                      ₹{product.price.toLocaleString('en-IN')}
+                    </p>
+                    {/* Discount Badge */}
+                    <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded border border-red-200">
+                      {product.discount}% OFF
+                    </span>
+                  </>
+                ) : (
+                  // Normal Price
+                  <p className="text-2xl font-bold text-accent">
+                    ₹{product.price.toLocaleString('en-IN')}
+                  </p>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <div className="flex text-yellow-500">
                   {[...Array(5)].map((_, i) => (
@@ -178,7 +201,7 @@ const ProductDetail: React.FC = () => {
                 </div>
                 <span className="text-sm text-subtle-text">({product.numOfReviews || 0} Reviews)</span>
               </div>
-              <p className="text-2xl font-bold text-accent">₹{product.price.toLocaleString('en-IN')}</p>
+      
               <p className="text-gray-600 leading-relaxed">{product.description}</p>
 
               {/*  SIZE SELECTION SECTION */}
@@ -215,30 +238,30 @@ const ProductDetail: React.FC = () => {
               )}
               {/* Color selecting section */}
               {product.colors && product.colors.length > 0 && (
-              <div className="py-4 border-b border-gray-100">
-                <p className="font-bold text-dark mb-3">Select Color: <span className="text-accent font-normal capitalize">{selectedColor}</span></p>
-                <div className="flex flex-wrap gap-3">
-                  {product.colors.map((color: string) => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-200 shadow-sm
-                        ${selectedColor === color 
-                          ? 'border-dark scale-110 ring-2 ring-offset-1 ring-dark' 
-                          : 'border-gray-200 hover:scale-105'
-                        }`}
-                      style={{ backgroundColor: color.toLowerCase() }} // Use CSS color name/hex
-                      title={color}
-                    >
-                      {/* Checkmark overlay for active state */}
-                      {selectedColor === color && (
-                        <Check className={`w-5 h-5 drop-shadow-md ${['white', 'yellow', 'cream', 'beige', 'ivory'].includes(color.toLowerCase()) ? 'text-black' : 'text-white'}`} />
-                      )}
-                    </button>
-                  ))}
+                <div className="py-4 border-b border-gray-100">
+                  <p className="font-bold text-dark mb-3">Select Color: <span className="text-accent font-normal capitalize">{selectedColor}</span></p>
+                  <div className="flex flex-wrap gap-3">
+                    {product.colors.map((color: string) => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-200 shadow-sm
+                        ${selectedColor === color
+                            ? 'border-dark scale-110 ring-2 ring-offset-1 ring-dark'
+                            : 'border-gray-200 hover:scale-105'
+                          }`}
+                        style={{ backgroundColor: color.toLowerCase() }} // Use CSS color name/hex
+                        title={color}
+                      >
+                        {/* Checkmark overlay for active state */}
+                        {selectedColor === color && (
+                          <Check className={`w-5 h-5 drop-shadow-md ${['white', 'yellow', 'cream', 'beige', 'ivory'].includes(color.toLowerCase()) ? 'text-black' : 'text-white'}`} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
               <div className="pt-6 border-t border-gray-100">
                 <button onClick={handleAddToCart} className="w-full md:w-auto px-8 py-3 bg-dark text-white rounded-md hover:bg-black transition flex items-center justify-center gap-2 shadow-lg">

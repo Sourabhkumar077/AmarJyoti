@@ -19,6 +19,8 @@ export interface Product {
   numOfReviews?: number;
   sizes?: string[]; 
   sizeDescription?: string;
+  discount: number;
+  salePrice: number;
 }
 
 interface ProductFilters {
@@ -48,20 +50,18 @@ export const fetchProducts = async (filters: ProductFilters): Promise<Product[]>
   // the wrapper is actually your ApiResponse object
   const response = await apiClient.get(`/products?${params.toString()}`);
   
-  // FIX: Access .data.data because your backend returns new ApiResponse(200, data, ...)
+  //  Access .data.data because  backend returns new ApiResponse(200, data, ...)
   return response.data.data || response.data; 
 };
 
-// ✅ FIXED: Fetch Single Product
+//  Fetch Single Product
 export const fetchProductById = async (id: string): Promise<Product> => {
   const response = await apiClient.get(`/products/${id}`);
-  // FIX: Access .data.data here too
   return response.data.data || response.data; 
 };
 
-// ✅ FIXED: Fetch Categories
+//  Fetch Categories
 export const fetchCategories = async (): Promise<Category[]> => {
   const response = await apiClient.get('/categories');
-  // FIX: Access .data.data here too
   return response.data.data || response.data;
 };

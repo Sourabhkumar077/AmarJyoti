@@ -14,6 +14,8 @@ export interface IProduct extends Document {
   sizeDescription: string;
   createdAt: Date;
   updatedAt: Date;
+  discount: number;     
+  salePrice: number;
 }
 
 const ProductSchema: Schema = new Schema(
@@ -33,9 +35,12 @@ const ProductSchema: Schema = new Schema(
     colors: [{ type: String }], // Array of color names/codes
     images: [{ type: String, required: true }], // URLs from ImageKit
     isActive: { type: Boolean, default: true },
+    discount: { type: Number, default: 0, min: 0, max: 99 },
+    salePrice: { type: Number, default: 0 }, // Will be calculated automatically
   },
   { timestamps: true }
 );
+
 
 // CRITICAL INDEX: Optimizes "Filter by Category + Sort by Price" 
 ProductSchema.index({ category: 1, price: 1 });

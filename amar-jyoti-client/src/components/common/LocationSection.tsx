@@ -94,10 +94,10 @@ const LocationSection: React.FC = () => {
             ></iframe>
             
             {/* Floating Badge on Map */}
-            <div className="absolute bottom-6 right-6 z-20 bg-white p-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
+            {/* <div className="absolute bottom-6 right-6 z-20 bg-white p-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
                <div className="w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
                <span className="text-xs font-bold text-dark">Open Now</span>
-            </div>
+            </div> */}
           </div>
 
         </div>

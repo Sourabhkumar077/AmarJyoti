@@ -60,7 +60,7 @@ const Footer: React.FC = () => {
       </div>
 
       <div className="container border-t border-white/10 pt-8 text-center text-gray-500 text-sm">
-        <p>&copy; 2025 Amar Jyoti. All rights reserved. | Designed with ❤️ By Sourabh Kumar.</p>
+        <p>&copy; 2025 Amar Jyoti. All rights reserved. | Designed with ❤️ for Ethnic Fashion</p>
       </div>
     </footer>
   );

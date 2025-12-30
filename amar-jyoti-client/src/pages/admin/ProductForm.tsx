@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createProduct, updateProduct, uploadImage } from '../../api/admin.api';
-import { ArrowLeft, Save, UploadCloud, X, Loader2 } from 'lucide-react'; 
+import { ArrowLeft, Save, UploadCloud, X, Loader2 } from 'lucide-react';
 import { fetchProductById, fetchCategories } from '../../api/products.api';
 import toast from 'react-hot-toast';
 
@@ -20,14 +20,14 @@ const ProductForm: React.FC = () => {
     name: '',
     description: '',
     price: 0,
+    discount: 0,
     stock: 0,
     category: '',
     fabric: '',
     colors: '',
     image1: '',
     image2: '',
-    //  NEW: Size Fields
-    sizes: '', 
+    sizes: '',
     sizeDescription: ''
   });
 
@@ -40,8 +40,8 @@ const ProductForm: React.FC = () => {
   //  LOGIC: Check selected Category Name to Hide/Show Size options
   const selectedCategoryObj = categories?.find((c: any) => c._id === formData.category);
   const categoryName = selectedCategoryObj?.name?.toLowerCase() || '';
-  
-  
+
+
   const shouldHideSize = categoryName.includes('saree') || categoryName.includes('lehnga') || categoryName.includes('lehenga');
 
   // Fetch Product Data (if editing)
@@ -50,12 +50,12 @@ const ProductForm: React.FC = () => {
     queryFn: () => fetchProductById(id!),
     enabled: isEditMode,
   });
-  
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (formData.name || formData.price > 0) {
         e.preventDefault();
-        e.returnValue = ''; 
+        e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -69,6 +69,7 @@ const ProductForm: React.FC = () => {
         name: existingProduct.name,
         description: existingProduct.description,
         price: existingProduct.price,
+        discount: existingProduct.discount || 0,
         stock: existingProduct.stock,
         category: typeof existingProduct.category === 'object' ? existingProduct.category._id : existingProduct.category,
         fabric: existingProduct.fabric || '',
@@ -158,7 +159,7 @@ const ProductForm: React.FC = () => {
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
-            
+
             {/*  UPDATED CATEGORY DROPDOWN */}
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
@@ -196,7 +197,7 @@ const ProductForm: React.FC = () => {
           {/* Pricing & Stock */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium mb-1">Price (₹)</label>
+              <label className="block text-sm font-medium mb-1">MRP(Price) (₹)</label>
               <input
                 required
                 type="number"
@@ -204,6 +205,26 @@ const ProductForm: React.FC = () => {
                 value={formData.price}
                 onChange={e => setFormData({ ...formData, price: Number(e.target.value) })}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Discount (%)</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  max="99"
+                  className="w-full border p-2 rounded focus:ring-accent focus:border-accent pr-8"
+                  value={formData.discount}
+                  onChange={e => setFormData({ ...formData, discount: Number(e.target.value) })}
+                />
+                <span className="absolute right-3 top-2 text-gray-500 text-sm">%</span>
+              </div>
+              {/* Shows Sale Price automatically */}
+              {formData.price > 0 && formData.discount > 0 && (
+                <p className="text-xs text-green-600 mt-1 font-bold">
+                  Final Price: ₹{Math.round(formData.price - (formData.price * formData.discount / 100))}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Stock Quantity</label>
@@ -229,30 +250,30 @@ const ProductForm: React.FC = () => {
           {/*  CONDITIONAL SIZE CONFIGURATION SECTION */}
           {!shouldHideSize && (
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
-                <h3 className="font-bold text-dark mb-4">Size Configuration</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                      <label className="block text-sm font-medium mb-1">Available Sizes (Comma separated)</label>
-                      <input
-                        type="text"
-                        placeholder="S, M, L, XL, XXL"
-                        className="w-full border p-2 rounded focus:ring-accent focus:border-accent"
-                        value={formData.sizes}
-                        onChange={e => setFormData({ ...formData, sizes: e.target.value })}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Example: M, L, XL (Leave blank for Free Size)</p>
-                  </div>
-                  <div>
-                      <label className="block text-sm font-medium mb-1">Size Chart / Description</label>
-                      <textarea
-                        rows={3}
-                        placeholder="e.g. M: Chest 38, L: Chest 40 (Inches)"
-                        className="w-full border p-2 rounded focus:ring-accent focus:border-accent"
-                        value={formData.sizeDescription}
-                        onChange={e => setFormData({ ...formData, sizeDescription: e.target.value })}
-                      />
-                  </div>
+              <h3 className="font-bold text-dark mb-4">Size Configuration</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Available Sizes (Comma separated)</label>
+                  <input
+                    type="text"
+                    placeholder="S, M, L, XL, XXL"
+                    className="w-full border p-2 rounded focus:ring-accent focus:border-accent"
+                    value={formData.sizes}
+                    onChange={e => setFormData({ ...formData, sizes: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Example: M, L, XL (Leave blank for Free Size)</p>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Size Chart / Description</label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. M: Chest 38, L: Chest 40 (Inches)"
+                    className="w-full border p-2 rounded focus:ring-accent focus:border-accent"
+                    value={formData.sizeDescription}
+                    onChange={e => setFormData({ ...formData, sizeDescription: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
