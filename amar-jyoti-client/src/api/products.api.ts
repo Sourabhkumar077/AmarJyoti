@@ -24,13 +24,27 @@ export interface Product {
   subcategory?: string;
 }
 
-interface ProductFilters {
+// 1. New Response Interface (Matches Backend Structure)
+export interface ProductsResponse {
+  products: Product[];
+  pagination: {
+    totalProducts: number;
+    totalPages: number;
+    currentPage: number;
+    itemsPerPage: number;
+  };
+}
+
+// 2. Updated Filters Interface with Pagination
+export interface ProductFilters {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
-  sortBy?: string; // 'newest' | 'price_asc' | 'price_desc'
+  sortBy?: string; 
   search?: string; 
   subcategory?: string;
+  page?: number;   
+  limit?: number;  
 }
 
 export interface Category {
@@ -38,8 +52,8 @@ export interface Category {
   name: string;
 }
 
-//  Fetch Products
-export const fetchProducts = async (filters: ProductFilters): Promise<Product[]> => {
+// 3. Fetch Products (Returns ProductsResponse)
+export const fetchProducts = async (filters: ProductFilters): Promise<ProductsResponse> => {
   const params = new URLSearchParams();
   
   if (filters.category) params.append('category', filters.category);
@@ -47,21 +61,25 @@ export const fetchProducts = async (filters: ProductFilters): Promise<Product[]>
   if (filters.maxPrice) params.append('max', filters.maxPrice.toString());
   if (filters.sortBy) params.append('sortBy', filters.sortBy);
   if (filters.search) params.append('search', filters.search);
-  
   if (filters.subcategory) params.append('subcategory', filters.subcategory);
+
+  // Append Pagination Params
+  params.append('page', (filters.page || 1).toString());
+  params.append('limit', (filters.limit || 12).toString());
 
   const response = await apiClient.get(`/products?${params.toString()}`);
   
-  return response.data.data || response.data; 
+  // Return the data object which contains products array and pagination object
+  return response.data.data; 
 };
 
-//  Fetch Single Product
+// Fetch Single Product
 export const fetchProductById = async (id: string): Promise<Product> => {
   const response = await apiClient.get(`/products/${id}`);
   return response.data.data || response.data; 
 };
 
-//  Fetch Categories
+// Fetch Categories
 export const fetchCategories = async (): Promise<Category[]> => {
   const response = await apiClient.get('/categories');
   return response.data.data || response.data;

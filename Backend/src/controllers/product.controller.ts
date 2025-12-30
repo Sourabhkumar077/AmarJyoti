@@ -72,34 +72,52 @@ export const createProductHandler = async (req: Request, res: Response) => {
 export const getProductsHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const { category, sortBy, search, subcategory } = req.query;
+    
+    // 1. Pagination Params Setup
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
+    
     let query: any = { isActive: true };
 
-    // --- 1. Category Logic ---
+    // --- Category Logic ---
     if (category) {
-    
       const categoryDoc = await Category.findOne({
         name: { $regex: new RegExp(String(category), "i") }, 
       });
-
       if (categoryDoc) {
-        
         query.category = categoryDoc._id;
       } else {
-        console.log("❌ Category NOT Found in DB for name:", category);
-        return res.status(200).json(new ApiResponse(200, [], "Category not found"));
+      
+        return res.status(200).json(new ApiResponse(200, {
+            products: [],
+            pagination: { totalProducts: 0, totalPages: 0, currentPage: 1, itemsPerPage: limit }
+        }, "Category not found"));
       }
     }
 
-    // --- 2. Subcategory Logic ---
+    // --- Subcategory Logic ---
     if (subcategory) {
         const cleanSub = String(subcategory).trim();
         query.subcategory = { $regex: new RegExp(cleanSub, "i") };
-        console.log("✅ Subcategory Filter Added:", cleanSub);
+    }
+
+    // --- Search Logic ---
+    if (search) {
+       query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+       ];
     }
 
     
+    const totalProducts = await Product.countDocuments(query);
 
-    let productQuery = Product.find(query).populate("category", "name");
+   
+    let productQuery = Product.find(query)
+        .populate("category", "name")
+        .skip(skip)   
+        .limit(limit); 
 
     // Sorting
     if (sortBy === "newest") productQuery = productQuery.sort({ createdAt: -1 });
@@ -108,8 +126,19 @@ export const getProductsHandler = asyncHandler(
 
     const products = await productQuery;
     
-  
-    res.status(200).json(new ApiResponse(200, products, "Fetched Successfully"));
+    // Total pages calculation
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    //  STEP 3: Response structure change karo
+    res.status(200).json(new ApiResponse(200, {
+        products,
+        pagination: {
+            totalProducts,
+            totalPages,
+            currentPage: page,
+            itemsPerPage: limit
+        }
+    }, "Fetched Successfully"));
   }
 );
 
