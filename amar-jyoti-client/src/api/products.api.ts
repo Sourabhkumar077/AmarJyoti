@@ -21,6 +21,7 @@ export interface Product {
   sizeDescription?: string;
   discount: number;
   salePrice: number;
+  subcategory?: string;
 }
 
 interface ProductFilters {
@@ -29,6 +30,7 @@ interface ProductFilters {
   maxPrice?: number;
   sortBy?: string; // 'newest' | 'price_asc' | 'price_desc'
   search?: string; 
+  subcategory?: string;
 }
 
 export interface Category {
@@ -45,12 +47,11 @@ export const fetchProducts = async (filters: ProductFilters): Promise<Product[]>
   if (filters.maxPrice) params.append('max', filters.maxPrice.toString());
   if (filters.sortBy) params.append('sortBy', filters.sortBy);
   if (filters.search) params.append('search', filters.search);
+  
+  if (filters.subcategory) params.append('subcategory', filters.subcategory);
 
-  // Note: We don't use <{ products: Product[] }> generic here because 
-  // the wrapper is actually your ApiResponse object
   const response = await apiClient.get(`/products?${params.toString()}`);
   
-  //  Access .data.data because  backend returns new ApiResponse(200, data, ...)
   return response.data.data || response.data; 
 };
 

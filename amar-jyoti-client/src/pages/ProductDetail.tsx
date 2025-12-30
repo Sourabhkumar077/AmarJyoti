@@ -153,9 +153,12 @@ const ProductDetail: React.FC = () => {
       <div className="bg-primary/10 min-h-screen py-10">
         <div className="container mx-auto px-4 md:px-8">
 
+
           {/* Product Info Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white p-6 rounded-xl shadow-sm mb-10">
+
             <div className="space-y-4">
+
               <div className="aspect-3/4 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                 <img src={product.images[selectedImage]} alt={product.name} className="w-full h-full object-cover" />
               </div>
@@ -169,6 +172,21 @@ const ProductDetail: React.FC = () => {
             </div>
 
             <div className="space-y-6">
+              <div className="flex items-center gap-2 mb-3">
+                {/* Category Name */}
+                <span className="text-sm text-gray-500 font-medium uppercase tracking-widest">
+                  {product.category?.name || "Product"}
+                </span>
+
+                {product.subcategory && (
+                  <>
+                    <span className="text-gray-300">|</span>
+                    <span className="bg-accent/10 text-accent border border-accent/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
+                      {product.subcategory}
+                    </span>
+                  </>
+                )}
+              </div>
               <h1 className="text-3xl font-serif text-dark">{product.name}</h1>
               <div className="flex items-center gap-3">
                 {product.discount > 0 ? (
@@ -201,8 +219,9 @@ const ProductDetail: React.FC = () => {
                 </div>
                 <span className="text-sm text-subtle-text">({product.numOfReviews || 0} Reviews)</span>
               </div>
-      
+
               <p className="text-gray-600 leading-relaxed">{product.description}</p>
+
 
               {/*  SIZE SELECTION SECTION */}
               {product.sizes && product.sizes.length > 0 && (

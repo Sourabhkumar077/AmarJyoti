@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createProduct, updateProduct, uploadImage } from '../../api/admin.api';
 import { ArrowLeft, Save, UploadCloud, X, Loader2 } from 'lucide-react';
 import { fetchProductById, fetchCategories } from '../../api/products.api';
+import CustomDropdown from '../../components/admin/CustomDropdown';
 import toast from 'react-hot-toast';
 
 const ProductForm: React.FC = () => {
@@ -11,6 +12,12 @@ const ProductForm: React.FC = () => {
   const isEditMode = !!id;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const SAREE_TYPES = [
+    "Banarasi Saree", "Silk Saree", "Banarasi Silk Saree", "Cotton Saree", "Chiffon Saree",
+    "Georgette Saree", "Linen Saree", "Organza Saree", "Crepe Saree",
+    "Satin Saree", "Net Saree", "Paithani Saree", "Kanjivaram Saree"
+  ];
 
   // Loading State for Image Uploads
   const [isUploading, setIsUploading] = useState(false);
@@ -28,7 +35,8 @@ const ProductForm: React.FC = () => {
     image1: '',
     image2: '',
     sizes: '',
-    sizeDescription: ''
+    sizeDescription: '',
+    subcategory: '',
   });
 
   // Fetch Categories for the Dropdown
@@ -79,6 +87,7 @@ const ProductForm: React.FC = () => {
         //  Populate Sizes
         sizes: existingProduct.sizes ? existingProduct.sizes.join(', ') : '',
         sizeDescription: existingProduct.sizeDescription || '',
+        subcategory: existingProduct.subcategory || '',
       });
     }
   }, [existingProduct]);
@@ -181,6 +190,34 @@ const ProductForm: React.FC = () => {
                 )}
               </select>
             </div>
+            {categories?.find((c: any) => c._id === formData.category)?.name?.toLowerCase().includes('saree') && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-500 mt-6">
+                <label className="text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-accent rounded-full inline-block"></span>
+                  Saree Type (Sub-Category)
+                </label>
+
+                {/* Custom Component Here */}
+                <CustomDropdown
+                  options={[...SAREE_TYPES, "Other"]} // 'Other' option bhi pass kiya
+                  value={formData.subcategory}
+                  onChange={(val :any) => setFormData({ ...formData, subcategory: val })}
+                  placeholder="Select Saree Fabric/Type"
+                />
+
+                {/* Custom Input for 'Other' */}
+                {formData.subcategory === 'Other' && (
+                  <div className="mt-3 animate-in fade-in slide-in-from-top-1">
+                    <input
+                      type="text"
+                      placeholder="Type custom saree type here..."
+                      className="w-full border-2 border-dashed border-accent/50 bg-accent/5 p-3 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-sm"
+                      onChange={e => setFormData({ ...formData, subcategory: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
