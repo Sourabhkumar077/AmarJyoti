@@ -6,7 +6,6 @@ import {
 import apiClient from "../../api/client";
 import { toast } from "react-hot-toast";
 
-// --- Types ---
 interface CartItem {
   product: any;
   productId: string;
@@ -22,34 +21,32 @@ interface CartState {
   error: string | null;
 }
 
-// --- Helper: Standardize Data ---
 const formatCartItems = (items: any[]): CartItem[] => {
   if (!items || !Array.isArray(items)) return [];
 
   return items
-    .map((item) => {
+    .map((item): CartItem | null => {
       const product = item.product;
+      if (!product) return null;
+      
       return {
         product: product,
-        productId: product?._id || "unknown",
+        productId: product._id || item.productId || "unknown",
         quantity: item.quantity,
         size: item.size,
         color: item.color,
         _id: item._id,
       };
     })
-    .filter((item) => item.product && item.productId !== "unknown");
+    .filter((item): item is CartItem => item !== null && item.productId !== "unknown");
 };
 
-// --- Initial State ---
 const localCart = localStorage.getItem("guest_cart");
 const initialState: CartState = {
   items: localCart ? JSON.parse(localCart) : [],
   loading: false,
   error: null,
 };
-
-// --- Async Thunks ---
 
 export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
@@ -68,47 +65,37 @@ export const fetchCart = createAsyncThunk(
 export const addToCartAsync = createAsyncThunk(
   "cart/addToCart",
   async (
-    {
-      product,
-      quantity,
-      size,
-      color,
-    }: { product: any; quantity: number; size?: string; color?: string },
+    params: { product: any; quantity: number; size?: string; color?: string },
     { rejectWithValue }
   ) => {
     try {
       const response = await apiClient.post("/cart/add", {
-        productId: product._id,
-        quantity,
-        size,
-        color,
+        productId: params.product._id,
+        quantity: params.quantity,
+        size: params.size,
+        color: params.color,
       });
-      toast.success("Added to cart");
       return formatCartItems(response.data.items);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Could not add to cart");
       return rejectWithValue(error.response?.data?.message);
     }
   }
 );
 
-//  UPDATED: Remove with Size
 export const removeFromCartAsync = createAsyncThunk(
   "cart/removeFromCart",
   async (
-    { id, size, color }: { id: string; size?: string; color?: string },
+    params: { id: string; size?: string; color?: string },
     { rejectWithValue }
   ) => {
     try {
-      //  Pass size as query param
-      let url = `/cart/remove/${id}?`;
-      if(size) url += `size=${size}&`;
-      if(color) url += `color=${color}`;
+      let url = `/cart/remove/${params.id}?`;
+      if(params.size) url += `size=${params.size}&`;
+      if(params.color) url += `color=${params.color}`;
+      
       const response = await apiClient.delete(url);
-      toast.success("Removed from cart");
       return formatCartItems(response.data.items);
     } catch (error: any) {
-      toast.error("Failed to remove item");
       return rejectWithValue(error.response?.data?.message);
     }
   }
@@ -126,13 +113,11 @@ export const updateCartItemAsync = createAsyncThunk(
       });
       return formatCartItems(response.data.items);
     } catch (error: any) {
-      toast.error("Failed to update cart");
       return rejectWithValue(error.response?.data?.message);
     }
   }
 );
 
-//  UPDATED: Merge with Size
 export const mergeGuestCart = createAsyncThunk(
   "cart/mergeGuestCart",
   async (_, { rejectWithValue }) => {
@@ -163,10 +148,8 @@ const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    // Guest Actions (Updated for Size)
     addToCartLocal: (state, action: PayloadAction<CartItem>) => {
       const newItem = action.payload;
-      //  Find strict match (ID + Size)
       const existingItem = state.items.find(item => 
         item.productId === newItem.productId && 
         item.size === newItem.size && 
@@ -183,15 +166,12 @@ const cartSlice = createSlice({
     },
     removeFromCartLocal: (
       state,
-      action: PayloadAction<{ id: string; size?: string,color?: string }>
+      action: PayloadAction<{ id: string; size?: string, color?: string }>
     ) => {
-      //  Filter by ID and Size
       state.items = state.items.filter((item) => {
-        // Keep item if ID matches BUT Size is different
-       const matchId = item.productId === action.payload.id;
-          const matchSize = item.size === action.payload.size;
-          const matchColor = item.color === action.payload.color;
-          
+        const matchId = item.productId === action.payload.id;
+        const matchSize = item.size === action.payload.size;
+        const matchColor = item.color === action.payload.color;
         return !(matchId && matchSize && matchColor);
       });
       localStorage.setItem("guest_cart", JSON.stringify(state.items));
@@ -201,7 +181,6 @@ const cartSlice = createSlice({
       state,
       action: PayloadAction<{ id: string; quantity: number; size?: string }>
     ) => {
-      //  Update specific item size
       const item = state.items.find(
         (item) =>
           item.productId === action.payload.id &&
@@ -234,23 +213,61 @@ const cartSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // AddToCart
+      .addCase(addToCartAsync.pending, (state, action) => {
+        const { product, quantity, size, color } = action.meta.arg;
+        const newItem = {
+            product: product,
+            productId: product._id,
+            quantity: quantity,
+            size: size,
+            color: color,
+            _id: "temp-" + Date.now()
+        };
+        
+        const existingItem = state.items.find(item => 
+             item.productId === newItem.productId && 
+             item.size === newItem.size && 
+             item.color === newItem.color
+        );
+
+        if (existingItem) {
+             existingItem.quantity += newItem.quantity;
+        } else {
+             state.items.push(newItem);
+        }
+        toast.success("Added to cart");
+      })
       .addCase(addToCartAsync.fulfilled, (state, action) => {
         state.items = action.payload;
         state.loading = false;
       })
-
-      // RemoveFromCart
-      .addCase(removeFromCartAsync.fulfilled, (state, action) => {
-        state.items = action.payload;
+      .addCase(addToCartAsync.rejected, () => {
+        toast.error("Failed to add to cart");
       })
 
-      // Update
+      .addCase(removeFromCartAsync.pending, (state, action) => {
+        const { id, size, color } = action.meta.arg;
+        state.items = state.items.filter((item) => {
+            const matchId = item.productId === id;
+            const matchSize = item.size === size;
+            const matchColor = item.color === color;
+            return !(matchId && matchSize && matchColor);
+        });
+        toast.success("Removed from cart");
+      })
+      .addCase(removeFromCartAsync.fulfilled, (state, action) => {
+        if (action.payload && action.payload.length > 0) {
+            state.items = action.payload;
+        }
+      })
+      .addCase(removeFromCartAsync.rejected, () => {
+         toast.error("Failed to remove item");
+      })
+
       .addCase(updateCartItemAsync.fulfilled, (state, action) => {
         state.items = action.payload;
       })
 
-      // Merge
       .addCase(mergeGuestCart.fulfilled, (state, action) => {
         if (action.payload) state.items = action.payload;
       });
