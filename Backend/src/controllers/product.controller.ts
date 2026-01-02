@@ -25,11 +25,14 @@ export const createProductHandler = async (req: Request, res: Response) => {
       finalSalePrice = Math.round(numPrice - (numPrice * numDiscount / 100));
     }
 
+    // Image Handling Logic
     let imageUrls: string[] = [];
+    // Priority 1: URLs from Frontend
     if (req.body.images && Array.isArray(req.body.images)) {
         imageUrls = req.body.images;
     }
     
+    // Priority 2: Files (if uploaded directly via Postman/Multer)
     if (req.files) {
         const files = req.files as Express.Multer.File[];
         for (const file of files) {
@@ -107,9 +110,7 @@ export const getProductsHandler = asyncHandler(
     // Initial Query
     let productQuery = Product.find(query).populate("category", "name");
 
-    // ✅ ROBUST STABLE SORTING
-    // We add a secondary sort key (_id) to ensure items don't jump around pages 
-    // when they have the exact same price.
+    //  ROBUST STABLE SORTING (Applied BEFORE Skip/Limit)
     let sortOptions: any = { createdAt: -1 }; 
 
     if (sortBy === "newest") {
@@ -196,6 +197,10 @@ export const updateProductHandler = async (req: Request, res: Response) => {
         updatePayload.salePrice = newPrice;
     }
 
+    if (req.body.images && Array.isArray(req.body.images)) {
+        updatePayload.images = req.body.images;
+    }
+
     if (req.files) {
         const files = req.files as Express.Multer.File[];
         const newImageUrls: string[] = [];
@@ -219,8 +224,7 @@ export const updateProductHandler = async (req: Request, res: Response) => {
   }
 };
 
-// 🛠️ 6. REPAIR DATA TOOL (One-time fix)
-// Run this via Postman/Browser once to fix all "Mixed Price" issues in existing database
+// 6. REPAIR DATA TOOL
 export const repairProductPricesHandler = async (req: Request, res: Response) => {
     try {
         const products = await Product.find({});
@@ -230,13 +234,11 @@ export const repairProductPricesHandler = async (req: Request, res: Response) =>
             const price = p.price || 0;
             const discount = p.discount || 0;
             
-            // Calculate what the salePrice SHOULD be
             let correctSalePrice = price;
             if (discount > 0) {
                 correctSalePrice = Math.round(price - (price * discount / 100));
             }
 
-            // If mismatch found, fix it
             if (p.salePrice !== correctSalePrice) {
                 p.salePrice = correctSalePrice;
                 await p.save();

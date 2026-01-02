@@ -32,21 +32,17 @@ const upload = multer({
 });
 
 // 3. Upload Endpoint
-
 router.post(
   "/",
   (req, res, next) => {
     upload.single("image")(req, res, (err) => {
       if (err instanceof multer.MulterError) {
-        // A Multer error occurred when uploading.
         return res
           .status(400)
           .json({ message: `Upload error: ${err.message}` });
       } else if (err) {
-        // An unknown error occurred when uploading.
         return res.status(400).json({ message: err.message });
       }
-      // Everything went fine, proceed to next middleware or handle here
       next();
     });
   },
@@ -62,8 +58,8 @@ router.post(
         fileName: `amar-jyoti-${Date.now()}-${req.file.originalname}`,
         folder: "/products", // Organized folder in ImageKit
         transformation: { 
-        pre: 'q-80,w-1000' // Quality 80%, Max Width 1000px
-    }
+           pre: 'q-80,w-1000' // Quality 80%, Max Width 1000px
+        }
       });
 
       // Return the clean URL
