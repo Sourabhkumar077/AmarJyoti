@@ -7,6 +7,7 @@ import { fetchProductById, fetchCategories } from '../../api/products.api';
 import CustomDropdown from '../../components/admin/CustomDropdown';
 import toast from 'react-hot-toast';
 
+
 const ProductForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
@@ -122,14 +123,20 @@ const ProductForm: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    //  10MB Limit
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File is too large! Please upload under 10MB.");
+      return;
+    }
+
     setIsUploading(true);
     try {
-      const data = await uploadImage(file);
+      const data = await uploadImage(file); // Direct Upload
       setFormData(prev => ({ ...prev, [fieldName]: data.url }));
       toast.success("Image uploaded!");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Image upload failed");
+      toast.error(error.response?.data?.message || "Image upload failed");
     } finally {
       setIsUploading(false);
     }

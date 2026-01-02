@@ -5,20 +5,17 @@ import Product from '../models/product.model';
 import * as cartService from './cart.service';
 import sendEmail from '../utils/sendEmail';
 
-// PHONEPE TEST CREDENTIALS
 const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || "PGTESTPAYUAT";
 const SALT_KEY = process.env.PHONEPE_SALT_KEY || "";
 const SALT_INDEX = process.env.PHONEPE_SALT_INDEX || 1;
 const PHONEPE_HOST_URL = process.env.PHONEPE_HOST_URL || "https://api-preprod.phonepe.com/apis/pg-sandbox";
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const API_URL = process.env.API_URL || "http://localhost:8080/api/v1"; 
 
-
-// 1. Create Order & Get Redirect URL
 export const createOrder = async (userId: string, address: any) => {
   const cart = await cartService.getCart(userId);
   if (!cart || cart.items.length === 0) throw new Error('Cart is empty');
 
-  // Calculate Amount
   let subtotal = 0;
   const orderItems = cart.items.map((item: any) => {
     const price = item.product.price; 
@@ -29,27 +26,22 @@ export const createOrder = async (userId: string, address: any) => {
   const shipping = subtotal < 1999 ? 100 : 0;
   const totalAmount = subtotal + shipping;
 
-  // Generate Unique Transaction ID
   const merchantTransactionId = "MT" + Date.now() + Math.floor(Math.random() * 1000);
 
-  // Payload for PhonePe
   const data = {
     merchantId: MERCHANT_ID,
     merchantTransactionId: merchantTransactionId,
     merchantUserId: userId,
-    amount: totalAmount * 100, // Paise
-    redirectUrl: `${CLIENT_URL}/payment/verify?id=${merchantTransactionId}`, // Frontend Route
+    amount: totalAmount * 100,
+    redirectUrl: `${CLIENT_URL}/payment/verify?id=${merchantTransactionId}`,
     redirectMode: "REDIRECT",
-    callbackUrl: "https://your-backend-url.com/api/v1/payment/webhook", // Optional for local
+    callbackUrl: `${API_URL}/payment/webhook`,
     paymentInstrument: {
       type: "PAY_PAGE"
     }
   };
 
-  // Base64 Encode
   const payload = Buffer.from(JSON.stringify(data)).toString('base64');
-
-  // Checksum (X-VERIFY)
   const stringToSign = payload + "/pg/v1/pay" + SALT_KEY;
   const sha256 = crypto.createHash('sha256').update(stringToSign).digest('hex');
   const checksum = sha256 + "###" + SALT_INDEX;
@@ -67,7 +59,6 @@ export const createOrder = async (userId: string, address: any) => {
     );
 
     if (response.data.success) {
-      // Save Pending Order
       await Order.create({
         user: userId,
         items: orderItems,
@@ -79,7 +70,6 @@ export const createOrder = async (userId: string, address: any) => {
         }
       });
 
-      // Return Redirect URL to Frontend
       return { 
         url: response.data.data.instrumentResponse.redirectInfo.url 
       };
@@ -87,15 +77,12 @@ export const createOrder = async (userId: string, address: any) => {
       throw new Error("PhonePe Init Failed");
     }
   } catch (error: any) {
-    // console.error("PhonePe Error:", error.response?.data || error.message);
-    console.error("🔴 PHONEPE ERROR:", JSON.stringify(error.response?.data || error.message, null, 2));
+    console.error("PHONEPE ERROR:", JSON.stringify(error.response?.data || error.message, null, 2));
     throw new Error(error.response?.data?.message || "Payment initiation failed");
   }
 };
 
-// 2. Verify Payment (Check Status API)
 export const verifyPayment = async (merchantTransactionId: string) => {
-  // Checksum for Status API
   const stringToSign = `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
   const sha256 = crypto.createHash('sha256').update(stringToSign).digest('hex');
   const checksum = sha256 + "###" + SALT_INDEX;
@@ -113,25 +100,23 @@ export const verifyPayment = async (merchantTransactionId: string) => {
     );
 
     if (response.data.success && response.data.code === 'PAYMENT_SUCCESS') {
-      // Find Order
       const order = await Order.findOne({ 'paymentInfo.transactionId': merchantTransactionId }).populate('user');
       if (!order) throw new Error("Order not found");
 
       if (order.status !== 'Placed') {
-        // Update Order
         order.status = 'Placed';
         order.paymentInfo.paymentId = response.data.data.paymentInstrument?.pgTransactionId;
         await order.save();
 
-        // Reduce Stock
         for (const item of order.items) {
-          await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
+          await Product.findOneAndUpdate(
+            { _id: item.product, stock: { $gte: item.quantity } }, 
+            { $inc: { stock: -item.quantity } }
+          );
         }
 
-        // Clear Cart
         await cartService.clearCart((order.user as any)._id.toString());
 
-        // Send Email
         const userEmail = (order.user as any)?.email;
         if (userEmail) {
            await sendEmail({

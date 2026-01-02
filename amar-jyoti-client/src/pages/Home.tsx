@@ -75,22 +75,22 @@ const Home: React.FC = () => {
     visible: { y: 0, opacity: 1 },
   };
 
-  // ✅ FIX: Updated useQuery to handle new response structure
+  //  Updated useQuery to handle new response structure
   const { data } = useQuery({
     queryKey: ["hero-products"],
     queryFn: () => fetchProducts({ 
         sortBy: "newest", 
-        limit: 4 // Only fetch 4 for hero section (optimization)
+        limit: 4 
     }),
     staleTime: 1000 * 60 * 5,
   });
 
-  // ✅ FIX: Extract products array safely
+  //  Extract products array safely
   const fetchedProducts = data?.products || [];
 
-  // --- LOGIC: Select Top 4 Products ---
+
   const activeHeroProducts = useMemo(() => {
-    // Agar API se data aya to wo use karo, warna Default wala
+    
     const sourceData = fetchedProducts.length > 0 ? fetchedProducts : HERO_DEFAULTS;
 
     return (sourceData as any[])
@@ -107,14 +107,14 @@ const Home: React.FC = () => {
       id: "saree",
       name: "Royal Sarees",
       description: "Banarasi, Silk & Cotton",
-      image: "/heroSaree2.jpg",
+      image: "/sareeCategory (2).png",
       path: "/products?category=Saree",
     },
     {
       id: "suit",
       name: "Elegant Suits",
       description: "Salwar Kameez & Sets",
-      image: "/Suit1.webp",
+      image: "/suitCategory.png",
       path: "/products?category=Suit",
     },
     {

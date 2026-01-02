@@ -86,8 +86,7 @@ export const registerHandler = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Register Error:", error); 
-
-    if (error.message === "Email already registered" || error.code === 11000) {
+    if (error.message === "Email is already registered" || error.code === 11000) {
       return res.status(409).json({ message: "Email is already registered" });
     }
     return res.status(500).json({ message: error.message || "Registration failed" });
