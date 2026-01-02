@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-// 👇 1. keepPreviousData yahan se import karein
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-// 👇 2. ProductsResponse interface import karein
 import { fetchProducts, type ProductsResponse } from '../api/products.api';
 import ProductCard from '../components/product/ProductCard';
 import { ChevronDown, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 
-// Saree Types List
 const SAREE_TYPES = [
   "Banarasi Saree", "Silk Saree", "Banarasi Silk Saree", "Cotton Saree", "Chiffon Saree", 
   "Georgette Saree", "Linen Saree", "Organza Saree", "Crepe Saree", 
@@ -20,19 +17,18 @@ const Category: React.FC = () => {
   
   const [sortBy, setSortBy] = useState<string>('newest');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
-  
-  // Pagination State
   const [page, setPage] = useState<number>(1);
 
-  // Check for Saree Category
   const isSareeCategory = categoryParam?.toLowerCase().includes('saree'); 
 
-  // Reset page to 1 on filter change
+  useEffect(() => {
+    setSelectedSubcategory('');
+  }, [categoryParam]);
+
   useEffect(() => {
     setPage(1);
   }, [categoryParam, selectedSubcategory, sortBy]);
 
-  // ✅ 3. Typed useQuery & Fixed keepPreviousData
   const { data, isLoading, isError } = useQuery<ProductsResponse>({
     queryKey: ['products', categoryParam, sortBy, selectedSubcategory, page],
     queryFn: () => fetchProducts({
@@ -42,13 +38,10 @@ const Category: React.FC = () => {
       page: page, 
       limit: 12   
     }),
-    // ⚠️ OLD (Error): keepPreviousData: true, 
-    // ✅ NEW (Fix):
     placeholderData: keepPreviousData, 
     staleTime: 1000 * 60 * 5, 
   });
 
-  // Extract Data
   const products = data?.products || [];
   const pagination = data?.pagination;
 
@@ -56,10 +49,7 @@ const Category: React.FC = () => {
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4">
         
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 border-b border-subtle-text/10 pb-6">
-          
-          {/* Title & Product Count */}
           <div>
             <h1 className="text-4xl font-serif text-dark capitalize mb-2">
               {categoryParam ? `${categoryParam} Collection` : 'All Products'}
@@ -69,10 +59,7 @@ const Category: React.FC = () => {
             </p>
           </div>
 
-          {/* Filters & Sorting */}
           <div className="flex flex-wrap gap-4">
-            
-            {/* Saree Type Filter */}
             {isSareeCategory && (
                 <div className="relative group animate-in fade-in slide-in-from-top-2">
                   <select 
@@ -89,7 +76,6 @@ const Category: React.FC = () => {
                 </div>
             )}
 
-            {/* Sort Filter */}
             <div className="relative group">
               <select 
                 className="appearance-none bg-white border border-subtle-text/20 pl-4 pr-10 py-2 rounded-md text-sm focus:outline-none focus:border-accent cursor-pointer min-w-40"
@@ -102,12 +88,9 @@ const Category: React.FC = () => {
               </select>
               <ChevronDown className="w-4 h-4 text-subtle-text absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-
           </div>
         </div>
 
-        
-        {/* Loading State */}
         {isLoading && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
@@ -120,7 +103,6 @@ const Category: React.FC = () => {
           </div>
         )}
 
-        {/* Error State */}
         {isError && (
           <div className="text-center py-20 bg-red-50 rounded-lg">
             <h3 className="text-error font-medium mb-2">Unable to load products</h3>
@@ -128,7 +110,6 @@ const Category: React.FC = () => {
           </div>
         )}
 
-        {/* Product Grid */}
         {!isLoading && products && products.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
             {products.map((product) => (
@@ -136,7 +117,6 @@ const Category: React.FC = () => {
             ))}
           </div>
         ) : (
-          // Empty State
           !isLoading && !isError && (
             <div className="text-center py-24">
                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
@@ -158,11 +138,8 @@ const Category: React.FC = () => {
           )
         )}
 
-        {/* Pagination Controls */}
         {!isLoading && pagination && pagination.totalPages > 1 && (
             <div className="flex justify-center items-center gap-6 mt-16 border-t border-gray-100 pt-8">
-                
-                {/* Previous Button */}
                 <button
                     onClick={() => setPage(old => Math.max(old - 1, 1))}
                     disabled={page === 1}
@@ -172,12 +149,10 @@ const Category: React.FC = () => {
                     Previous
                 </button>
 
-                {/* Page Info */}
                 <span className="text-sm font-serif tracking-wide text-gray-500">
                     Page <span className="text-dark font-bold">{pagination.currentPage}</span> of {pagination.totalPages}
                 </span>
 
-                {/* Next Button */}
                 <button
                     onClick={() => setPage(old => (pagination.totalPages > old ? old + 1 : old))}
                     disabled={page === pagination.totalPages}

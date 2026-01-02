@@ -5,44 +5,43 @@ import Product from "../models/product.model";
 import Category from "../models/category.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
+// import { uploadToImageKit } from "../services/image.service"; // Uncomment when ready
 
-// 1. Create Product (Admin Only)
+// 1. Create Product
 export const createProductHandler = async (req: Request, res: Response) => {
   try {
-    
     const { 
       name, description, category, price, stock, fabric, 
-      colors, sizes, sizeDescription, discount ,subcategory
+      colors, sizes, sizeDescription, discount, subcategory
     } = req.body;
 
     const numPrice = Number(price);
     const numStock = Number(stock);
     const numDiscount = Number(discount) || 0;
     
+    // Calculate Sale Price accurately
     let finalSalePrice = numPrice;
-   
     if (numDiscount > 0) {
       finalSalePrice = Math.round(numPrice - (numPrice * numDiscount / 100));
     }
 
-    // 3. Image Handling Logic
     let imageUrls: string[] = [];
     if (req.body.images && Array.isArray(req.body.images)) {
         imageUrls = req.body.images;
     }
+    
     if (req.files) {
         const files = req.files as Express.Multer.File[];
         for (const file of files) {
-            console.log("File received but upload logic needs your function:", file.originalname);
+            console.log("File received:", file.originalname);
+            // const url = await uploadToImageKit(file); 
+            // imageUrls.push(url);
         }
     }
 
-    // 4. Array Conversion (Colors/Sizes)
-    
     const parsedColors = Array.isArray(colors) ? colors : (colors ? colors.split(',') : []);
     const parsedSizes = Array.isArray(sizes) ? sizes : (sizes ? sizes.split(',') : []);
 
-    // 5. Create Product in DB
     const product = await Product.create({
       name,
       description,
@@ -56,9 +55,8 @@ export const createProductHandler = async (req: Request, res: Response) => {
       images: imageUrls, 
       isActive: true,
       discount: numDiscount,
-      salePrice: finalSalePrice ,
+      salePrice: finalSalePrice, // Storing correct sale price
       subcategory: subcategory || ""
-      
     });
 
     res.status(201).json(product);
@@ -68,19 +66,17 @@ export const createProductHandler = async (req: Request, res: Response) => {
   }
 };
 
-// 2. Get All Products (With Filters & Category Fix)
+// 2. Get All Products (Stable Sorting Fixed)
 export const getProductsHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const { category, sortBy, search, subcategory } = req.query;
     
-    // 1. Pagination Params Setup
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 12;
     const skip = (page - 1) * limit;
     
     let query: any = { isActive: true };
 
-    // --- Category Logic ---
     if (category) {
       const categoryDoc = await Category.findOne({
         name: { $regex: new RegExp(String(category), "i") }, 
@@ -88,7 +84,6 @@ export const getProductsHandler = asyncHandler(
       if (categoryDoc) {
         query.category = categoryDoc._id;
       } else {
-      
         return res.status(200).json(new ApiResponse(200, {
             products: [],
             pagination: { totalProducts: 0, totalPages: 0, currentPage: 1, itemsPerPage: limit }
@@ -96,13 +91,10 @@ export const getProductsHandler = asyncHandler(
       }
     }
 
-    // --- Subcategory Logic ---
     if (subcategory) {
-        const cleanSub = String(subcategory).trim();
-        query.subcategory = { $regex: new RegExp(cleanSub, "i") };
+        query.subcategory = { $regex: new RegExp(String(subcategory).trim(), "i") };
     }
 
-    // --- Search Logic ---
     if (search) {
        query.$or = [
           { name: { $regex: search, $options: 'i' } },
@@ -110,26 +102,30 @@ export const getProductsHandler = asyncHandler(
        ];
     }
 
-    
     const totalProducts = await Product.countDocuments(query);
 
-   
-    let productQuery = Product.find(query)
-        .populate("category", "name")
-        .skip(skip)   
-        .limit(limit); 
+    // Initial Query
+    let productQuery = Product.find(query).populate("category", "name");
 
-    // Sorting
-    if (sortBy === "newest") productQuery = productQuery.sort({ createdAt: -1 });
-    else if (sortBy === "price_low" || sortBy === "price_asc") productQuery = productQuery.sort({ salePrice: 1 });
-    else if (sortBy === "price_high" || sortBy === "price_desc") productQuery = productQuery.sort({ salePrice: -1 });
+    // ✅ ROBUST STABLE SORTING
+    // We add a secondary sort key (_id) to ensure items don't jump around pages 
+    // when they have the exact same price.
+    let sortOptions: any = { createdAt: -1 }; 
+
+    if (sortBy === "newest") {
+        sortOptions = { createdAt: -1 };
+    } else if (sortBy === "price_low" || sortBy === "price_asc") {
+        sortOptions = { salePrice: 1, price: 1, _id: -1 }; // Secondary keys added
+    } else if (sortBy === "price_high" || sortBy === "price_desc") {
+        sortOptions = { salePrice: -1, price: -1, _id: -1 };
+    }
+
+    // Apply Sort -> Skip -> Limit (Strict Order)
+    productQuery = productQuery.sort(sortOptions).skip(skip).limit(limit);
 
     const products = await productQuery;
-    
-    // Total pages calculation
     const totalPages = Math.ceil(totalProducts / limit);
 
-    //  STEP 3: Response structure change karo
     res.status(200).json(new ApiResponse(200, {
         products,
         pagination: {
@@ -146,97 +142,109 @@ export const getProductsHandler = asyncHandler(
 export const getProductByIdHandler = async (req: Request, res: Response) => {
   try {
     const product = await productService.getProduct(req.params.id);
-    // Use ApiResponse so Frontend .data.data works
-    res
-      .status(200)
-      .json(new ApiResponse(200, product, "Product fetched successfully"));
+    res.status(200).json(new ApiResponse(200, product, "Product fetched successfully"));
   } catch (error: any) {
     if (error.message === "Product not found") {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "Product not found"));
+      return res.status(404).json(new ApiResponse(404, null, "Product not found"));
     }
     logger.error(error, "Error fetching product");
     res.status(500).json(new ApiResponse(500, null, "Server Error"));
   }
 };
 
-// 4. Delete Product (Admin Only)
+// 4. Delete Product
 export const deleteProductHandler = async (req: Request, res: Response) => {
   try {
     await productService.removeProduct(req.params.id);
-    // Use ApiResponse
-    res
-      .status(200)
-      .json(new ApiResponse(200, null, "Product deleted successfully"));
+    res.status(200).json(new ApiResponse(200, null, "Product deleted successfully"));
   } catch (error: any) {
     if (error.message === "Product not found") {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "Product not found"));
+      return res.status(404).json(new ApiResponse(404, null, "Product not found"));
     }
     logger.error(error, "Error deleting product");
     res.status(500).json(new ApiResponse(500, null, "Server Error"));
   }
 };
 
-// 5. Update Product (Admin Only)
+// 5. Update Product (With Correct Price Logic)
 export const updateProductHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { price, discount, stock,subcategory,...otherData } = req.body;
+    const { price, discount, stock, subcategory, ...otherData } = req.body;
 
-    
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) {
+        return res.status(404).json({ message: "Product not found" });
+    }
+
     const updatePayload: any = { ...otherData };
 
-   
     if (stock !== undefined) updatePayload.stock = Number(stock);
     if (subcategory !== undefined) updatePayload.subcategory = subcategory;
 
-    // Price & Discount Logic (Automatic Calculation)
-    if (price !== undefined || discount !== undefined) {
-      const numPrice = price !== undefined ? Number(price) : undefined;
-      const numDiscount = discount !== undefined ? Number(discount) : 0;
+    // Use new values if provided, otherwise keep existing
+    const newPrice = price !== undefined ? Number(price) : existingProduct.price;
+    const newDiscount = discount !== undefined ? Number(discount) : existingProduct.discount;
 
-      if (numPrice !== undefined) updatePayload.price = numPrice;
-      updatePayload.discount = numDiscount;
+    if (price !== undefined) updatePayload.price = newPrice;
+    if (discount !== undefined) updatePayload.discount = newDiscount;
 
-     
-      if (numPrice !== undefined) {
-        if (numDiscount > 0) {
-          updatePayload.salePrice = Math.round(numPrice - (numPrice * numDiscount / 100));
-        } else {
-          updatePayload.salePrice = numPrice;
-        }
-      }
+    // Always recalculate Sale Price
+    if (newDiscount > 0) {
+        updatePayload.salePrice = Math.round(newPrice - (newPrice * newDiscount / 100));
+    } else {
+        updatePayload.salePrice = newPrice;
     }
 
-    // 3. Image Handling 
-    
     if (req.files) {
         const files = req.files as Express.Multer.File[];
         const newImageUrls: string[] = [];
-        
         for (const file of files) {
-            
-            // const url = await uploadToImageKit(file);
-            // newImageUrls.push(url);
+             console.log("File received for update:", file.originalname);
+             // const url = await uploadToImageKit(file);
+             // newImageUrls.push(url);
         }
-
         if (newImageUrls.length > 0) {
             if (!updatePayload.$push) updatePayload.$push = {};
             updatePayload.$push.images = { $each: newImageUrls };
         }
     }
 
-    // 4. Database Update
     const product = await Product.findByIdAndUpdate(id, updatePayload, { new: true });
-
-    if (!product) return res.status(404).json({ message: "Product not found" });
 
     res.status(200).json(product);
   } catch (error: any) {
     console.error("Update Product Error:", error);
     res.status(500).json({ message: error.message || "Server Error" });
   }
+};
+
+// 🛠️ 6. REPAIR DATA TOOL (One-time fix)
+// Run this via Postman/Browser once to fix all "Mixed Price" issues in existing database
+export const repairProductPricesHandler = async (req: Request, res: Response) => {
+    try {
+        const products = await Product.find({});
+        let count = 0;
+        
+        for (const p of products) {
+            const price = p.price || 0;
+            const discount = p.discount || 0;
+            
+            // Calculate what the salePrice SHOULD be
+            let correctSalePrice = price;
+            if (discount > 0) {
+                correctSalePrice = Math.round(price - (price * discount / 100));
+            }
+
+            // If mismatch found, fix it
+            if (p.salePrice !== correctSalePrice) {
+                p.salePrice = correctSalePrice;
+                await p.save();
+                count++;
+            }
+        }
+        res.status(200).json({ message: `Successfully repaired prices for ${count} products.` });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
 };

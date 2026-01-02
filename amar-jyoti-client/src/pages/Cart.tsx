@@ -1,30 +1,25 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ShoppingBag,PlusCircle } from 'lucide-react';
+import { ArrowRight, ShoppingBag, PlusCircle } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { fetchCart } from '../store/slices/cartSlice'; 
 import CartItem from '../components/cart/CartItem'; 
-
 
 const Cart: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   
-  //  Added (state: any) to bypass strict type checking on the OR condition
   const { items = [], loading } = useAppSelector((state: any) => state.cart || { items: [] });
   const { user } = useAppSelector((state: any) => state.auth);
 
-  // Initial Fetch (Only if user is logged in)
   useEffect(() => {
     if (user) {
       dispatch(fetchCart());
     }
   }, [dispatch, user]);
 
-  // Calculate Totals safely
   const subtotal = items.reduce((acc: number, item: any) => {
-    // Ensure product and price exist before calculation to prevent crash
-    const price = item.product?.price || 0;
+    const price = item.product?.salePrice || item.product?.price || 0;
     return acc + (price * item.quantity);
   }, 0);
   
@@ -55,7 +50,7 @@ const Cart: React.FC = () => {
         </div>
         <h2 className="text-2xl font-serif text-dark mb-2">Your cart is empty</h2>
         <p className="text-subtle-text mb-8 max-w-md">
-          Looks like you haven't added anything to your cart yet. Explore our collection of premium ethnic wear.
+          Looks like you haven't added anything to your cart yet.
         </p>
         <Link to="/products" className="btn-primary flex items-center gap-2">
           Start Shopping <ArrowRight className="w-4 h-4" />
@@ -70,28 +65,26 @@ const Cart: React.FC = () => {
         <h1 className="text-3xl font-serif text-dark mb-8">Shopping Cart ({items.length} items)</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Cart Items List */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden p-6">
               {items.map((item: any) => (
                 <CartItem 
-                  key={item._id || item.productId || Math.random()} 
+                  key={`${item.productId}-${item.size}-${item.color}-${Math.random()}`}
                   item={item} 
                 />
               ))}
+              
               <button
-                              type="button"
-                              onClick={() => navigate('/products')}
-                              className="w-full mb-6 group flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-subtle-text/30 rounded-xl text-sm font-medium text-subtle-text hover:border-accent hover:text-accent hover:bg-accent/5 transition-all duration-200"
-                            >
-                              <PlusCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                              Add More Products
-                            </button>
+                 type="button"
+                 onClick={() => navigate('/products')}
+                 className="w-full mt-4 mb-2 group flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-subtle-text/30 rounded-xl text-sm font-medium text-subtle-text hover:border-accent hover:text-accent hover:bg-accent/5 transition-all duration-200"
+              >
+                  <PlusCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  Add More Products
+              </button>
             </div>
           </div>
-          
 
-          {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
               <h2 className="text-xl font-serif text-dark mb-6">Order Summary</h2>
