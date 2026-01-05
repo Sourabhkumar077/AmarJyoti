@@ -1,12 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import imageCompression from 'browser-image-compression';
 import { createProduct, updateProduct, uploadImage } from '../../api/admin.api';
 import { ArrowLeft, Save, UploadCloud, X, Loader2 } from 'lucide-react';
 import { fetchProductById, fetchCategories } from '../../api/products.api';
 import CustomDropdown from '../../components/admin/CustomDropdown';
 import toast from 'react-hot-toast';
 
+interface ProductFormData {
+  name: string;
+  description: string;
+  price: number | string;
+  discount: number | string;
+  stock: number | string;
+  category: string;
+  fabric: string;
+  colors: string;
+  image1: string;
+  image2: string;
+  sizes: string;
+  sizeDescription: string;
+  subcategory: string;
+}
 
 const ProductForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,16 +36,14 @@ const ProductForm: React.FC = () => {
     "Satin Saree", "Net Saree", "Paithani Saree", "Kanjivaram Saree"
   ];
 
-  // Loading State for Image Uploads
   const [isUploading, setIsUploading] = useState(false);
 
-  // Form State
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
-    price: 0,
-    discount: 0,
-    stock: 0,
+    price: '',
+    discount: '',
+    stock: '',
     category: '',
     fabric: '',
     colors: '',
@@ -40,20 +54,16 @@ const ProductForm: React.FC = () => {
     subcategory: '',
   });
 
-  // Fetch Categories for the Dropdown
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
   });
 
-  //  LOGIC: Check selected Category Name to Hide/Show Size options
   const selectedCategoryObj = categories?.find((c: any) => c._id === formData.category);
   const categoryName = selectedCategoryObj?.name?.toLowerCase() || '';
 
-
   const shouldHideSize = categoryName.includes('saree') || categoryName.includes('lehnga') || categoryName.includes('lehenga');
 
-  // Fetch Product Data (if editing)
   const { data: existingProduct } = useQuery({
     queryKey: ['product', id],
     queryFn: () => fetchProductById(id!),
@@ -62,7 +72,7 @@ const ProductForm: React.FC = () => {
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (formData.name || formData.price > 0) {
+      if (formData.name || Number(formData.price) > 0) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -71,21 +81,19 @@ const ProductForm: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [formData]);
 
-  // Populate form when editing data loads
   useEffect(() => {
     if (existingProduct) {
       setFormData({
         name: existingProduct.name,
         description: existingProduct.description,
         price: existingProduct.price,
-        discount: existingProduct.discount || 0,
+        discount: existingProduct.discount || '',
         stock: existingProduct.stock,
         category: typeof existingProduct.category === 'object' ? existingProduct.category._id : existingProduct.category,
         fabric: existingProduct.fabric || '',
         colors: existingProduct.colors ? existingProduct.colors.join(', ') : '',
         image1: existingProduct.images?.[0] || '',
         image2: existingProduct.images?.[1] || '',
-        //  Populate Sizes
         sizes: existingProduct.sizes ? existingProduct.sizes.join(', ') : '',
         sizeDescription: existingProduct.sizeDescription || '',
         subcategory: existingProduct.subcategory || '',
@@ -94,36 +102,43 @@ const ProductForm: React.FC = () => {
   }, [existingProduct]);
 
   const mutation = useMutation({
-    mutationFn: (data: any) => {
-      //  Payload Update
+    mutationFn: (data: ProductFormData) => {
       const payload = {
         ...data,
+        price: Number(data.price),
+        stock: Number(data.stock),
+        discount: Number(data.discount) || 0,
         colors: data.colors.split(',').map((c: string) => c.trim()),
         images: [data.image1, data.image2].filter(Boolean),
-        // Logic: If hidden, send empty array. Else split string to array.
+        // Ensure sizes are handled correctly based on category
         sizes: shouldHideSize ? [] : (data.sizes ? data.sizes.split(',').map((s: string) => s.trim()) : []),
-        sizeDescription: shouldHideSize ? '' : data.sizeDescription
+        sizeDescription: shouldHideSize ? '' : data.sizeDescription,
+        // Ensure category is sent as the string ID
+        category: data.category
       };
 
-      if (isEditMode) return updateProduct(id!, payload);
-      return createProduct(payload);
+    
+      if (isEditMode) return updateProduct(id!, payload as any);
+      return createProduct(payload as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      // Also invalidate the specific product query to ensure the edit form refreshes
+      queryClient.invalidateQueries({ queryKey: ['product', id] }); 
+      
       toast.success(`Product ${isEditMode ? 'updated' : 'created'} successfully! 🎉`);
       navigate('/admin/products');
     },
     onError: (err: any) => {
+      console.error("Mutation Error:", err);
       toast.error(err.response?.data?.message || "Operation failed");
     }
   });
 
-  // HANDLER: Handle File Selection & Auto-Upload
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'image1' | 'image2') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    //  10MB Limit
     if (file.size > 10 * 1024 * 1024) {
       toast.error("File is too large! Please upload under 10MB.");
       return;
@@ -131,7 +146,16 @@ const ProductForm: React.FC = () => {
 
     setIsUploading(true);
     try {
-      const data = await uploadImage(file); // Direct Upload
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1200,
+        useWebWorker: true,
+        fileType: "image/webp"
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      const data = await uploadImage(compressedFile);
+      
       setFormData(prev => ({ ...prev, [fieldName]: data.url }));
       toast.success("Image uploaded!");
     } catch (error: any) {
@@ -140,6 +164,14 @@ const ProductForm: React.FC = () => {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof ProductFormData) => {
+    const val = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      [field]: val === '' ? '' : Number(val)
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -163,7 +195,6 @@ const ProductForm: React.FC = () => {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1">Product Name</label>
@@ -176,7 +207,6 @@ const ProductForm: React.FC = () => {
               />
             </div>
 
-            {/*  UPDATED CATEGORY DROPDOWN */}
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
               <select
@@ -204,15 +234,13 @@ const ProductForm: React.FC = () => {
                   Saree Type (Sub-Category)
                 </label>
 
-                {/* Custom Component Here */}
                 <CustomDropdown
-                  options={[...SAREE_TYPES, "Other"]} // 'Other' option bhi pass kiya
+                  options={[...SAREE_TYPES, "Other"]}
                   value={formData.subcategory}
-                  onChange={(val :any) => setFormData({ ...formData, subcategory: val })}
+                  onChange={(val: any) => setFormData({ ...formData, subcategory: val })}
                   placeholder="Select Saree Fabric/Type"
                 />
 
-                {/* Custom Input for 'Other' */}
                 {formData.subcategory === 'Other' && (
                   <div className="mt-3 animate-in fade-in slide-in-from-top-1">
                     <input
@@ -238,16 +266,20 @@ const ProductForm: React.FC = () => {
             />
           </div>
 
-          {/* Pricing & Stock */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1">MRP(Price) (₹)</label>
               <input
                 required
                 type="number"
-                className="w-full border p-2 rounded focus:ring-accent focus:border-accent"
+                placeholder="Enter Price"
+                className="w-full border p-2 rounded focus:ring-accent focus:border-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 value={formData.price}
-                onChange={e => setFormData({ ...formData, price: Number(e.target.value) })}
+                onChange={(e) => handleNumberChange(e, 'price')}
+                onWheel={(e) => e.currentTarget.blur()}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+                }}
               />
             </div>
             <div>
@@ -257,16 +289,20 @@ const ProductForm: React.FC = () => {
                   type="number"
                   min="0"
                   max="99"
-                  className="w-full border p-2 rounded focus:ring-accent focus:border-accent pr-8"
+                  placeholder="0"
+                  className="w-full border p-2 rounded focus:ring-accent focus:border-accent pr-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   value={formData.discount}
-                  onChange={e => setFormData({ ...formData, discount: Number(e.target.value) })}
+                  onChange={(e) => handleNumberChange(e, 'discount')}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+                  }}
                 />
                 <span className="absolute right-3 top-2 text-gray-500 text-sm">%</span>
               </div>
-              {/* Shows Sale Price automatically */}
-              {formData.price > 0 && formData.discount > 0 && (
+              {Number(formData.price) > 0 && Number(formData.discount) > 0 && (
                 <p className="text-xs text-green-600 mt-1 font-bold">
-                  Final Price: ₹{Math.round(formData.price - (formData.price * formData.discount / 100))}
+                  Final Price: ₹{Math.round(Number(formData.price) - (Number(formData.price) * Number(formData.discount) / 100))}
                 </p>
               )}
             </div>
@@ -275,9 +311,14 @@ const ProductForm: React.FC = () => {
               <input
                 required
                 type="number"
-                className="w-full border p-2 rounded focus:ring-accent focus:border-accent"
+                placeholder="Enter Stock"
+                className="w-full border p-2 rounded focus:ring-accent focus:border-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 value={formData.stock}
-                onChange={e => setFormData({ ...formData, stock: Number(e.target.value) })}
+                onChange={(e) => handleNumberChange(e, 'stock')}
+                onWheel={(e) => e.currentTarget.blur()}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+                }}
               />
             </div>
             <div>
@@ -291,7 +332,6 @@ const ProductForm: React.FC = () => {
             </div>
           </div>
 
-          {/*  CONDITIONAL SIZE CONFIGURATION SECTION */}
           {!shouldHideSize && (
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
               <h3 className="font-bold text-dark mb-4">Size Configuration</h3>
@@ -321,15 +361,12 @@ const ProductForm: React.FC = () => {
             </div>
           )}
 
-          {/* --- IMAGE UPLOADER SECTION --- */}
           <div className="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300">
             <h3 className="text-sm font-medium mb-4 flex items-center text-dark">
               <UploadCloud className="w-4 h-4 mr-2" /> Product Images
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              {/* Image 1 */}
               <div>
                 <label className="block text-xs uppercase text-subtle-text mb-2 font-bold">Main Image *</label>
                 {formData.image1 ? (
@@ -358,7 +395,6 @@ const ProductForm: React.FC = () => {
                 )}
               </div>
 
-              {/* Image 2 */}
               <div>
                 <label className="block text-xs uppercase text-subtle-text mb-2 font-bold">Secondary Image</label>
                 {formData.image2 ? (
@@ -386,7 +422,6 @@ const ProductForm: React.FC = () => {
                   </label>
                 )}
               </div>
-
             </div>
           </div>
 

@@ -13,10 +13,14 @@ export interface DashboardStats {
   }[];
 }
 
+export type ProductInput = Omit<Product, 'category' | '_id'> & {
+  category: string;
+};
+
 export interface AdminOrder {
   _id: string;
-  user: { 
-    name: string; 
+  user: {
+    name: string;
     email: string;
     phone?: string;
   };
@@ -52,8 +56,9 @@ export const fetchDashboardStats = async () => {
 };
 
 export const fetchAllOrders = async (status?: string) => {
-  const params = status ? `?status=${status}` : "";
-  const response = await apiClient.get<AdminOrder[]>(`/admin/orders${params}`);
+  const response = await apiClient.get<AdminOrder[]>("/admin/orders", {
+    params: { status }
+  });
   return response.data;
 };
 
@@ -64,10 +69,11 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
   return response.data;
 };
 
-// Fixed: Added Pagination Params
 export const fetchAdminProducts = async ({ page = 1, limit = 10 }) => {
-  const response = await apiClient.get(`/products?page=${page}&limit=${limit}&sortBy=newest`);
-  return response.data; 
+  const response = await apiClient.get("/products", {
+    params: { page, limit, sortBy: "newest" }
+  });
+  return response.data;
 };
 
 export const createProduct = async (productData: FormData | object) => {
@@ -77,7 +83,7 @@ export const createProduct = async (productData: FormData | object) => {
 
 export const updateProduct = async (
   id: string,
-  productData: Partial<Product>
+  productData: Partial<Product> | FormData
 ) => {
   const response = await apiClient.put(`/products/${id}`, productData);
   return response.data;
@@ -90,10 +96,8 @@ export const deleteProduct = async (id: string) => {
 
 export const uploadImage = async (file: File) => {
   const formData = new FormData();
-  formData.append('image', file); 
+  formData.append('image', file);
 
-  const response = await apiClient.post('/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const response = await apiClient.post('/upload', formData);
   return response.data;
 };
