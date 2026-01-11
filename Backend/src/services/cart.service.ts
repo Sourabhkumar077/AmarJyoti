@@ -158,20 +158,22 @@ export const clearCart = async (userId: string) => {
 };
 
 //  Merge Logic to respect sizes & color
-export const mergeCarts = async (userId: string, guestItems: { productId: string, quantity: number, size?: string,color?: string }[]) => {
+export const mergeCarts = async (userId: string, guestItems: { productId: string, quantity: number, size?: string, color?: string }[]) => {
   try {
     let cart = await Cart.findOne({ user: userId });
     
-    // Key format: "productId:size" to distinguish items
+    // Key format: "productId:size:color" to distinguish items
     const productMap = new Map<string, number>();
     // Key Generator: ProductID:Size:Color
-    const generateKey = (pId: string, sz?: string,c?: string) => `${pId}:${sz||''}:${c||''}`;
+    const generateKey = (pId: string, sz?: string, c?: string) => `${pId}:${sz || ''}:${c || ''}`;
 
     if (cart) {
       cart.items.forEach((item: any) => {
         if (!item.product) return;
         const pId = item.product._id ? item.product._id.toString() : item.product.toString();
-        const key = generateKey(pId, item.size);
+
+        const key = generateKey(pId, item.size, item.color);
+        
         const currentQty = productMap.get(key) || 0;
         productMap.set(key, currentQty + item.quantity);
       });
@@ -180,14 +182,14 @@ export const mergeCarts = async (userId: string, guestItems: { productId: string
     // Merge Guest Items
     guestItems.forEach((item) => {
       if(!item.productId) return;
-      const key = generateKey(item.productId, item.size,item.color);
+      const key = generateKey(item.productId, item.size, item.color);
       const currentQty = productMap.get(key) || 0;
       productMap.set(key, currentQty + item.quantity);
     });
 
     // Reconstruct Items Array
     const mergedItems = Array.from(productMap.entries()).map(([key, quantity]) => {
-      const [productId, size,color] = key.split(':');
+      const [productId, size, color] = key.split(':');
       return {
         product: new mongoose.Types.ObjectId(productId),
         quantity: quantity,

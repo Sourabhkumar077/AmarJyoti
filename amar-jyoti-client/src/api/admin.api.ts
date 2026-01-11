@@ -70,10 +70,10 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
 };
 
 export const fetchAdminProducts = async ({ page = 1, limit = 10 }) => {
-  const response = await apiClient.get("/products", {
-    params: { page, limit, sortBy: "newest" }
+  const response = await apiClient.get("/products/admin/all", {
+    params: { page, limit } 
   });
-  return response.data;
+  return response.data.data; 
 };
 
 export const createProduct = async (productData: FormData | object) => {

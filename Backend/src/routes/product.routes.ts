@@ -6,12 +6,15 @@ import {
   deleteProductHandler,
   updateProductHandler,
   repairProductPricesHandler,
+  getAdminProductsHandler,
 } from "../controllers/product.controller";
 import { protect, adminOnly } from "../middlewares/auth.middleware";
 import { validate } from "../middlewares/zodValidation";
 import { productSchema } from "../utils/zodSchemas";
 
 const router = Router();
+
+router.get("/admin/all", protect, adminOnly, getAdminProductsHandler);
 
 // Public Routes
 router.get("/repair-prices", repairProductPricesHandler); //GET /api/v1/repair-prices
@@ -37,6 +40,5 @@ router.put(
   // validate(productSchema), if validation is strict then we can remove it or use it
   updateProductHandler
 );
-
 
 export default router;

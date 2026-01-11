@@ -5,7 +5,9 @@ import {
 } from "@reduxjs/toolkit";
 import apiClient from "../../api/client";
 import { toast } from "react-hot-toast";
+import { logout } from "./authSlice";
 
+// --- TYPES ---
 interface CartItem {
   product: any;
   productId: string;
@@ -21,32 +23,49 @@ interface CartState {
   error: string | null;
 }
 
-const formatCartItems = (items: any[]): CartItem[] => {
-  if (!items || !Array.isArray(items)) return [];
+// --- HELPERS (For Efficiency & Safety) ---
 
-  return items
-    .map((item): CartItem | null => {
-      const product = item.product;
-      if (!product) return null;
-      
-      return {
-        product: product,
-        productId: product._id || item.productId || "unknown",
-        quantity: item.quantity,
-        size: item.size,
-        color: item.color,
-        _id: item._id,
-      };
-    })
-    .filter((item): item is CartItem => item !== null && item.productId !== "unknown");
+const saveLocal = (items: CartItem[]) => {
+  localStorage.setItem("guest_cart", JSON.stringify(items));
 };
 
-const localCart = localStorage.getItem("guest_cart");
+const getLocalCart = (): CartItem[] => {
+  try {
+    const localCart = localStorage.getItem("guest_cart");
+    return localCart ? JSON.parse(localCart) : [];
+  } catch (err) {
+    return [];
+  }
+};
+
+// Precise item matcher (Fixes the "Ghost Item" bug)
+const isSameItem = (item: CartItem, id: string, size?: string, color?: string) => {
+  const matchId = item.productId === id || item.product?._id === id;
+  // Treat null and undefined as the same thing ("")
+  const matchSize = (item.size || "") === (size || ""); 
+  const matchColor = (item.color || "") === (color || "");
+  return matchId && matchSize && matchColor;
+};
+
+const formatCartItems = (items: any[]): CartItem[] => {
+  if (!items || !Array.isArray(items)) return [];
+  return items.map((item) => ({
+    product: item.product,
+    productId: item.product?._id || item.productId || "unknown",
+    quantity: item.quantity,
+    size: item.size || "",
+    color: item.color || "",
+    _id: item._id,
+  })).filter(i => i.productId !== "unknown");
+};
+
 const initialState: CartState = {
-  items: localCart ? JSON.parse(localCart) : [],
+  items: getLocalCart(),
   loading: false,
   error: null,
 };
+
+// --- ASYNC THUNKS ---
 
 export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
@@ -55,9 +74,7 @@ export const fetchCart = createAsyncThunk(
       const response = await apiClient.get("/cart");
       return formatCartItems(response.data.items);
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch cart"
-      );
+      return rejectWithValue(error.response?.data?.message);
     }
   }
 );
@@ -82,6 +99,7 @@ export const addToCartAsync = createAsyncThunk(
   }
 );
 
+// --- OPTIMIZED DELETE: Returns ID instead of full list ---
 export const removeFromCartAsync = createAsyncThunk(
   "cart/removeFromCart",
   async (
@@ -90,11 +108,14 @@ export const removeFromCartAsync = createAsyncThunk(
   ) => {
     try {
       let url = `/cart/remove/${params.id}?`;
-      if(params.size) url += `size=${params.size}&`;
-      if(params.color) url += `color=${params.color}`;
+      if (params.size) url += `size=${params.size}&`;
+      if (params.color) url += `color=${params.color}`;
+
+      await apiClient.delete(url);
       
-      const response = await apiClient.delete(url);
-      return formatCartItems(response.data.items);
+      // We return the params so we know what was deleted.
+      // We do NOT fetch the new list to avoid slow sync issues.
+      return params; 
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message);
     }
@@ -108,9 +129,7 @@ export const updateCartItemAsync = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await apiClient.put(`/cart/update/${productId}`, {
-        quantity,
-      });
+      const response = await apiClient.put(`/cart/update/${productId}`, { quantity });
       return formatCartItems(response.data.items);
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message);
@@ -122,21 +141,17 @@ export const mergeGuestCart = createAsyncThunk(
   "cart/mergeGuestCart",
   async (_, { rejectWithValue }) => {
     try {
-      const guestCartStr = localStorage.getItem("guest_cart");
-      if (!guestCartStr) return [];
-
-      const guestItems = JSON.parse(guestCartStr);
+      const guestItems = getLocalCart();
       if (guestItems.length === 0) return [];
-
-      const payload = guestItems.map((item: CartItem) => ({
-        productId: item.productId || item.product?._id,
+      
+      const payload = guestItems.map((item) => ({
+        productId: item.productId,
         quantity: item.quantity,
         size: item.size,
-        color: item.color
+        color: item.color,
       }));
 
       const response = await apiClient.post("/cart/merge", { items: payload });
-      localStorage.removeItem("guest_cart");
       return formatCartItems(response.data.items);
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message);
@@ -144,16 +159,16 @@ export const mergeGuestCart = createAsyncThunk(
   }
 );
 
+// --- SLICE ---
+
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
     addToCartLocal: (state, action: PayloadAction<CartItem>) => {
       const newItem = action.payload;
-      const existingItem = state.items.find(item => 
-        item.productId === newItem.productId && 
-        item.size === newItem.size && 
-        item.color === newItem.color
+      const existingItem = state.items.find((item) =>
+        isSameItem(item, newItem.productId, newItem.size, newItem.color)
       );
 
       if (existingItem) {
@@ -161,33 +176,36 @@ const cartSlice = createSlice({
       } else {
         state.items.push(newItem);
       }
-      localStorage.setItem("guest_cart", JSON.stringify(state.items));
+      saveLocal(state.items);
       toast.success("Added to cart");
     },
+
     removeFromCartLocal: (
       state,
-      action: PayloadAction<{ id: string; size?: string, color?: string }>
+      action: PayloadAction<{ id: string; size?: string; color?: string }>
     ) => {
-      state.items = state.items.filter((item) => {
-        const matchId = item.productId === action.payload.id;
-        const matchSize = item.size === action.payload.size;
-        const matchColor = item.color === action.payload.color;
-        return !(matchId && matchSize && matchColor);
-      });
-      localStorage.setItem("guest_cart", JSON.stringify(state.items));
-      toast.success("Removed from cart");
+      const { id, size, color } = action.payload;
+      // Filter creates a new array cleanly
+      const initialLen = state.items.length;
+      state.items = state.items.filter((item) => !isSameItem(item, id, size, color));
+      
+      if(state.items.length !== initialLen) {
+          saveLocal(state.items);
+          toast.success("Removed from cart");
+      }
     },
+
     updateCartItemLocal: (
       state,
       action: PayloadAction<{ id: string; quantity: number; size?: string }>
     ) => {
-      const item = state.items.find(
-        (item) =>
-          item.productId === action.payload.id &&
-          item.size === action.payload.size
+      const item = state.items.find((item) =>
+        isSameItem(item, action.payload.id, action.payload.size)
       );
-      if (item) item.quantity = action.payload.quantity;
-      localStorage.setItem("guest_cart", JSON.stringify(state.items));
+      if (item) {
+        item.quantity = action.payload.quantity;
+        saveLocal(state.items);
+      }
     },
     clearCart: (state) => {
       state.items = [];
@@ -198,78 +216,52 @@ const cartSlice = createSlice({
       localStorage.removeItem("guest_cart");
     },
   },
+
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCart.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+      // Fetch
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.items = action.payload;
         state.loading = false;
       })
-      .addCase(fetchCart.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      .addCase(addToCartAsync.pending, (state, action) => {
-        const { product, quantity, size, color } = action.meta.arg;
-        const newItem = {
-            product: product,
-            productId: product._id,
-            quantity: quantity,
-            size: size,
-            color: color,
-            _id: "temp-" + Date.now()
-        };
-        
-        const existingItem = state.items.find(item => 
-             item.productId === newItem.productId && 
-             item.size === newItem.size && 
-             item.color === newItem.color
-        );
-
-        if (existingItem) {
-             existingItem.quantity += newItem.quantity;
-        } else {
-             state.items.push(newItem);
-        }
-        toast.success("Added to cart");
-      })
+      
+      // Add
       .addCase(addToCartAsync.fulfilled, (state, action) => {
         state.items = action.payload;
-        state.loading = false;
-      })
-      .addCase(addToCartAsync.rejected, () => {
-        toast.error("Failed to add to cart");
+        toast.success("Added to cart");
       })
 
+      // --- EFFICIENT DELETE LOGIC ---
       .addCase(removeFromCartAsync.pending, (state, action) => {
+        // 1. Remove immediately from UI (Optimistic)
         const { id, size, color } = action.meta.arg;
-        state.items = state.items.filter((item) => {
-            const matchId = item.productId === id;
-            const matchSize = item.size === size;
-            const matchColor = item.color === color;
-            return !(matchId && matchSize && matchColor);
-        });
+        state.items = state.items.filter((item) => !isSameItem(item, id, size, color));
+      })
+      .addCase(removeFromCartAsync.fulfilled, () => {
+        // 2. Success: Do nothing! The item is already gone.
+        // We do NOT update state from server response to avoid "Ghost Items"
         toast.success("Removed from cart");
       })
-      .addCase(removeFromCartAsync.fulfilled, (state, action) => {
-        if (action.payload && action.payload.length > 0) {
-            state.items = action.payload;
-        }
-      })
-      .addCase(removeFromCartAsync.rejected, () => {
-         toast.error("Failed to remove item");
+      .addCase(removeFromCartAsync.rejected, (state) => {
+        // 3. If failed, show error (User can refresh if needed)
+        toast.error("Could not sync with server");
       })
 
+      // Update
       .addCase(updateCartItemAsync.fulfilled, (state, action) => {
         state.items = action.payload;
       })
 
+      // Merge
       .addCase(mergeGuestCart.fulfilled, (state, action) => {
-        if (action.payload) state.items = action.payload;
+        if(action.payload) state.items = action.payload;
+        localStorage.removeItem("guest_cart");
+        toast.success("Cart merged");
+      })
+
+      // Logout
+      .addCase(logout, (state) => {
+        state.items = [];
       });
   },
 });
@@ -281,4 +273,5 @@ export const {
   clearCart,
   clearCartLocal,
 } = cartSlice.actions;
+
 export default cartSlice.reducer;

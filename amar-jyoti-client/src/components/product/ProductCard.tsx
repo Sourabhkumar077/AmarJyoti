@@ -4,6 +4,7 @@ import { ShoppingCart } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addToCartAsync, addToCartLocal } from '../../store/slices/cartSlice';
 import toast from 'react-hot-toast';
+import LazyImage from '../common/LazyImage'; 
 
 interface ProductCardProps {
   product: any;
@@ -18,44 +19,38 @@ const ProductCard = React.memo(({ product }: ProductCardProps) => {
     e.stopPropagation();
 
     if (user) {
-      // ✅ FIX: Pass the FULL product object, not just productId
-      // This enables the "Instant" UI update
       dispatch(addToCartAsync({ product: product, quantity: 1 }));
-      
     } else {
-      // ✅ Guest User -> Local Storage
       dispatch(addToCartLocal({
         product: product, 
         productId: product._id,
         quantity: 1,
-        _id: Date.now().toString() // Temp ID
+        _id: Date.now().toString()
       }));
-      
       toast.success(`${product.name.substring(0, 15)}... added to cart!`);
     }
   };
 
   return (
     <div className="group bg-white rounded-xl overflow-hidden border border-subtle-text/10 shadow-sm hover:shadow-lg transition-all duration-300">
-      {/* Image Link */}
-      <Link to={`/product/${product._id}`} className="block relative aspect-4/5 overflow-hidden bg-gray-100">
-        <img 
-          src={product.images[0]} 
-          alt={product.name}
-          loading="lazy"
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+      <Link to={`/product/${product._id}`} className="block relative aspect-4/5 overflow-hidden">
+        {/* Optimized Image Component */}
+        <LazyImage 
+          src={product.images?.[0] || '/placeholder.jpg'} 
+          alt={product.name} 
+          className="transform group-hover:scale-105 transition-transform duration-500"
         />
+        
         {product.stock <= 0 && (
-          <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+          <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-20">
             <span className="bg-dark text-white text-xs px-2 py-1 rounded">Out of Stock</span>
           </div>
         )}
       </Link>
 
-      {/* Info */}
       <div className="p-4">
         <p className="text-xs text-accent font-medium uppercase tracking-wider mb-1">
-           {typeof product.category === 'object' ? product.category.name : 'Ethnic Wear'}
+           {typeof product.category === 'object' ? product.category?.name : 'Ethnic Wear'}
         </p>
         <Link to={`/product/${product._id}`}>
           <h3 className="text-dark font-serif text-lg font-medium leading-tight mb-2 group-hover:text-accent transition-colors truncate">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import toast from 'react-hot-toast'; 
 import {
   updateCartItemAsync,
   removeFromCartAsync,
@@ -25,8 +26,6 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
         quantity: newQty
       }));
     } else {
-      // For local cart, we should ideally use size to identify item too.
-      // But for now keeping it simple as per slice implementation
       dispatch(updateCartItemLocal({ id: item.productId, quantity: newQty, size: item.size }));
     }
   };
@@ -34,11 +33,12 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const handleRemove = () => {
     if (user) {
       const idToSend = item.productId || item.product._id;
-      //  Pass Size for removal
-      dispatch(removeFromCartAsync({id: idToSend, size: item.size,color: item.color}));
+      // Logged in: Toast is handled by the Thunk in cartSlice
+      dispatch(removeFromCartAsync({id: idToSend, size: item.size, color: item.color}));
     } else {
-      //  Pass Size for local removal
+      // Guest: Toast must be handled here
       dispatch(removeFromCartLocal({id: item.productId, size: item.size, color: item.color}));
+      toast.success("Item removed from cart"); // ✅ Added Toast
     }
   };
 
@@ -67,13 +67,11 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
             {item.product?.category?.name || 'Ethnic Wear'}
           </p>
 
-          {/*  Display Size Badge if size exists */}
           {item.size && (
             <span className="text-xs font-medium text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded inline-block">
               Size: {item.size}
             </span>
           )}
-          {/* color badge */}
           {item.color && (
                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded flex items-center gap-1">
                  Color: 

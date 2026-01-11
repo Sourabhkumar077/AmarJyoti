@@ -8,7 +8,6 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addToCartLocal, addToCartAsync } from '../store/slices/cartSlice';
 import Loader from '../components/common/Loader';
 import toast from 'react-hot-toast';
-//  IMPORT 1: Import Modal
 import SizeChartModal from '../components/product/SizeChartModal';
 
 const ProductDetail: React.FC = () => {
@@ -21,8 +20,6 @@ const ProductDetail: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
-
-  //  STATE 2: Modal Open State
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
 
   // Review Form State
@@ -229,7 +226,7 @@ const ProductDetail: React.FC = () => {
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-bold text-dark">Select Size</span>
 
-                    {/*  BUTTON 3: "Size Guide" button added (Opens Modal) */}
+                    {/*  "Size Guide" button added (Opens Modal) */}
                     <button
                       onClick={() => setIsSizeChartOpen(true)}
                       className="text-xs text-accent flex items-center gap-1 border-b border-dashed border-accent hover:text-yellow-600 font-medium cursor-pointer transition-colors"

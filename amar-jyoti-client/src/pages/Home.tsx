@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "../api/products.api";
 import NewArrivals from "../components/common/NewArrivals";
@@ -10,285 +10,153 @@ import ServicesSection from "../components/common/ServicesSection";
 import LegacySection from '../components/home/LegacySection';
 
 const HERO_DEFAULTS = [
-  {
-    _id: "default_1",
-    name: "Royal Red Bridal Lehenga",
-    price: 15499,
-    images: ["/herolehnga4.jpg"],
-    stock: 10,
-    isActive: true,
-    link: "/products?category=Lehenga",
-    description: "Exclusive Bridal Lehenga",
-    category: { _id: "cat_1", name: "Lehenga" as const },
-    fabric: "Silk",
-    colors: ["Red"],
-  },
-  {
-    _id: "default_2",
-    name: "Emerald Banarasi Saree",
-    price: 8999,
-    images: ["/heroSaree2.jpg"],
-    stock: 10,
-    isActive: true,
-    link: "/products?category=Saree",
-    description: "Authentic Banarasi Saree",
-    category: { _id: "cat_2", name: "Saree" as const },
-    fabric: "Silk",
-    colors: ["Green"],
-  },
-  {
-    _id: "default_3",
-    name: "Heavy Embroidered Suit",
-    price: 22000,
-    images: ["/heroSuit1_.jpg"],
-    stock: 10,
-    isActive: true,
-    link: "/products?category=Suit",
-    description: "Designer Party Wear Suit",
-    category: { _id: "cat_3", name: "Suit" as const },
-    fabric: "Georgette",
-    colors: ["Blue"],
-  },
-  {
-    _id: "default_4",
-    name: "Magenta Party Wear",
-    price: 18500,
-    images: ["/heroSaree3.jpg"],
-    stock: 10,
-    isActive: true,
-    link: "/products?category=Lehenga",
-    description: "Elegant Party Wear",
-    category: { _id: "cat_4", name: "Lehenga" as const },
-    fabric: "Net",
-    colors: ["Magenta"],
-  },
+  { _id: "def1", name: "Royal Bridal Lehenga", images: ["/herolehnga4.jpg"], category: { name: "Lehenga" } },
+  { _id: "def2", name: "Banarasi Silk Saree", images: ["/heroSaree2.jpg"], category: { name: "Saree" } },
+  { _id: "def3", name: "Designer Party Suit", images: ["/heroSuit1_.jpg"], category: { name: "Suit" } },
 ];
 
+const CATEGORIES = [
+  { id: "saree", name: "Royal Sarees", sub: "Banarasi & Silk", image: "/sareeCategory (2).png", path: "/products?category=Saree" },
+  { id: "suit", name: "Elegant Suits", sub: "Salwar Kameez", image: "/suitCategory.png", path: "/products?category=Suit" },
+  { id: "lehenga", name: "Bridal Lehengas", sub: "Wedding Edition", image: "/OIP (3).jpg", path: "/products?category=Lehenga" },
+];
+
+const MARQUEE_TEXT = "HANDCRAFTED LUXURY • AUTHENTIC WEAVES • PAN-INDIA SHIPPING • CUSTOM TAILORING • ";
+
+const Marquee = () => (
+  <div className="bg-accent text-white py-3 overflow-hidden border-y border-white/10 relative z-20">
+    <motion.div className="flex whitespace-nowrap" animate={{ x: [0, -1000] }} transition={{ repeat: Infinity, duration: 30, ease: "linear" }}>
+      {[...Array(4)].map((_, i) => (
+        <span key={i} className="text-xs md:text-sm font-medium tracking-[0.2em] uppercase mx-4 flex items-center gap-4">
+          {MARQUEE_TEXT} <Sparkles className="w-3 h-3 inline-block" />
+        </span>
+      ))}
+    </motion.div>
+  </div>
+);
+
 const Home: React.FC = () => {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 },
-  };
-
-  //  Updated useQuery to handle new response structure
   const { data } = useQuery({
     queryKey: ["hero-products"],
-    queryFn: () => fetchProducts({ 
-        sortBy: "newest", 
-        limit: 4 
-    }),
+    queryFn: () => fetchProducts({ sortBy: "newest", limit: 3 }),
     staleTime: 1000 * 60 * 5,
   });
 
-  //  Extract products array safely
-  const fetchedProducts = data?.products || [];
-
-
-  const activeHeroProducts = useMemo(() => {
-    
-    const sourceData = fetchedProducts.length > 0 ? fetchedProducts : HERO_DEFAULTS;
-
-    return (sourceData as any[])
-      .filter((p: any) => p.stock > 0 && p.isActive !== false)
-      .slice(0, 4);
-  }, [fetchedProducts]);
-
-  const leftColProducts = activeHeroProducts.slice(0, 2);
-  const rightColProducts = activeHeroProducts.slice(2, 4);
-
-  // Categories Data
-  const categories = [
-    {
-      id: "saree",
-      name: "Royal Sarees",
-      description: "Banarasi, Silk & Cotton",
-      image: "/sareeCategory (2).png",
-      path: "/products?category=Saree",
-    },
-    {
-      id: "suit",
-      name: "Elegant Suits",
-      description: "Salwar Kameez & Sets",
-      image: "/suitCategory.png",
-      path: "/products?category=Suit",
-    },
-    {
-      id: "lehenga",
-      name: "Bridal Lehengas",
-      description: "Wedding & Party Wear",
-      image: "/OIP (3).jpg",
-      path: "/products?category=Lehenga",
-    },
-  ];
-
-  // Component: Product Card
-  const HeroCard = ({ product, height }: { product: any; height: string }) => {
-    if (!product) return null;
-
-    const productLink = product.link || `/product/${product._id}`;
-    const productImage =
-      product.images && product.images.length > 0
-        ? product.images[0]
-        : "/placeholder.jpg";
-
-    return (
-      <Link
-        to={productLink}
-        className="block group relative overflow-hidden rounded-2xl shadow-xl cursor-pointer bg-gray-100"
-      >
-        <img
-          src={productImage}
-          alt={product.name}
-          loading="eager"
-          // @ts-ignore
-          fetchPriority="high"
-          className={`${height} w-full object-cover transition-transform duration-700 group-hover:scale-110`}
-        />
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-            <h4 className="text-white font-serif font-medium truncate text-lg">
-              {product.name}
-            </h4>
-          </div>
-        </div>
-      </Link>
-    );
-  };
+  const heroProducts = useMemo(() => {
+    let items = data?.products?.length ? data.products.filter((p: any) => p.isActive !== false) : HERO_DEFAULTS;
+    while (items.length < 3 && items.length > 0) items = [...items, ...items];
+    return items.slice(0, 3);
+  }, [data]);
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className="min-h-screen"
-    >
-      {/* --- HERO SECTION --- */}
-      <section className="relative h-auto min-h-[90vh] md:h-[85vh] flex items-center justify-center overflow-hidden bg-[#F9F4EF] py-12 md:py-0">
-        <div className="absolute top-0 right-0 w-2/3 h-full bg-orange-100/50 rounded-l-[10rem] blur-3xl z-0" />
+    <div className="min-h-screen bg-[#FDFBF7] overflow-x-hidden">
+      
+      <section className="relative pt-32 pb-16 md:pt-24 md:pb-8 h-auto min-h-[50vh] md:h-[90vh] flex items-center overflow-hidden">
+        <div className="absolute top-0 left-0 w-[60vw] h-[60vw] bg-orange-100/60 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="container mx-auto px-6 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center h-full">
+                
+                <div className="lg:col-span-5 flex flex-col justify-center items-center lg:items-start text-center lg:text-left space-y-6 z-10">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+                        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-dark/10 bg-white/50 backdrop-blur text-xs font-bold uppercase tracking-widest text-accent mb-6">
+                           <Star className="w-3 h-3 fill-current" /> Festive Collection
+                        </span>
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif text-dark leading-[1.1] tracking-tight">
+                            Weaving <br />
+                            <span className="italic text-accent font-light">Heritage</span>
+                        </h1>
+                        <p className="text-subtle-text text-base md:text-lg mt-6 max-w-md mx-auto lg:mx-0 leading-relaxed font-light">
+                            Experience the finest handloom Sarees and bespoke bridal wear. 
+                            Authentic craftsmanship, directly from weavers to your wardrobe.
+                        </p>
+                    </motion.div>
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                        className="flex flex-wrap justify-center lg:justify-start gap-4 pt-4"
+                    >
+                        <Link to="/products" className="group px-8 py-3.5 bg-dark text-white rounded-full flex items-center gap-2 transition-all hover:bg-accent hover:shadow-xl text-sm font-medium tracking-wide">
+                            Shop Collection <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                        <Link to="/products?category=Lehenga" className="px-8 py-3.5 border border-dark/20 rounded-full text-dark hover:bg-white hover:border-transparent hover:shadow-md transition-all text-sm font-medium tracking-wide">
+                            Bridal Edit
+                        </Link>
+                    </motion.div>
+                </div>
 
-        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
-          <div className="text-center md:text-left space-y-6 order-2 md:order-1">
-            <motion.span
-              variants={itemVariants}
-              className="inline-block px-4 py-1 bg-white border border-yellow-200 rounded-full text-yellow-700 text-xs font-bold tracking-widest uppercase"
-            >
-              New Collection
-            </motion.span>
-            <motion.h1
-              variants={itemVariants}
-              className="text-5xl md:text-7xl font-serif text-dark leading-tight"
-            >
-              Elegance Woven in{" "}
-              <span className="text-yellow-600 italic">Tradition</span>
-            </motion.h1>
-            <motion.p
-              variants={itemVariants}
-              className="text-lg text-gray-600 max-w-lg mx-auto md:mx-0 leading-relaxed"
-            >
-              Discover authentic handloom Sarees, bespoke Suits, and designer
-              Lehengas crafted for the modern Indian woman.
-            </motion.p>
-            <motion.div
-              variants={itemVariants}
-              className="pt-4 flex flex-col sm:flex-row gap-4 justify-center md:justify-start"
-            >
-              <Link
-                to="/products"
-                className="px-8 py-4 bg-yellow-600 text-white rounded-full font-medium hover:bg-yellow-700 transition-all shadow-lg flex items-center justify-center gap-2 group"
-              >
-                Shop Now{" "}
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                to="/products?sort=newest"
-                className="px-8 py-4 bg-white border border-yellow-600/30 text-dark rounded-full font-medium hover:bg-orange-50 transition-all flex items-center justify-center"
-              >
-                View New Arrivals
-              </Link>
-            </motion.div>
-          </div>
-
-          <motion.div
-            variants={itemVariants}
-            className="hidden md:grid grid-cols-2 gap-4 order-1 md:order-2"
-          >
-            <div className="space-y-4 translate-y-8">
-              <HeroCard product={leftColProducts[0]} height="h-64" />
-              <HeroCard product={leftColProducts[1]} height="h-48" />
+                <div className="hidden lg:block lg:col-span-7 h-137.5 w-full relative z-0">
+                    <div className="w-full h-full flex gap-3 overflow-hidden rounded-l-[2.5rem] shadow-2xl shadow-orange-100 bg-white p-2">
+                        {heroProducts.map((product: any, idx: number) => (
+                            <motion.div 
+                                key={product._id}
+                                initial={{ opacity: 0, x: 50 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="relative flex-1 h-full rounded-xl overflow-hidden cursor-pointer group transition-[flex] duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:flex-[2.5] border border-gray-100"
+                            >
+                                <Link to={`/product/${product._id}`} className="block w-full h-full relative">
+                                    <img 
+                                        src={product.images?.[0] || '/placeholder.jpg'} 
+                                        alt={product.name} 
+                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 filter brightness-[0.95] group-hover:brightness-100"
+                                    />
+                                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-30 group-hover:opacity-70 transition-opacity duration-500" />
+                                    <div className="absolute bottom-6 left-6 right-6 translate-y-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                                        <div className="bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-lg border-l-4 border-accent">
+                                            <p className="text-[10px] font-bold text-accent uppercase tracking-wider mb-1">Authentic Weave</p>
+                                            <div className="flex justify-between items-center gap-2">
+                                                <h3 className="text-lg font-serif text-dark leading-none truncate">{product.name}</h3>
+                                                <ArrowRight className="w-4 h-4 text-dark" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
             </div>
-            <div className="space-y-4">
-              <HeroCard product={rightColProducts[0]} height="h-48" />
-              <HeroCard product={rightColProducts[1]} height="h-64" />
-            </div>
-          </motion.div>
         </div>
       </section>
 
-      {/* --- CATEGORIES SECTION --- */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-5xl font-serif text-dark tracking-tight">
-              Shop by <span className="italic text-yellow-600">Category</span>
-            </h2>
-            <div className="h-1 w-24 bg-yellow-600/30 mx-auto rounded-full"></div>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto font-light">
-              Explore our finest collections curated for your unique style.
-            </p>
+      <Marquee />
+
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto max-w-7xl">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6 px-2">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-serif text-dark mb-2">Curated Collections</h2>
+              <p className="text-subtle-text font-light text-sm md:text-base">Essentials for every special occasion.</p>
+            </div>
+            <Link to="/products" className="text-accent text-sm font-medium border-b border-accent/50 pb-0.5 hover:text-dark hover:border-dark transition-all">
+                View All Categories
+            </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 h-auto md:h-150">
-            {categories.map((cat, index) => (
-              <Link
-                key={cat.id || index}
-                to={cat.path}
-                className={`group relative overflow-hidden rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer h-96 md:h-auto ${
-                  index === 0
-                    ? "md:col-span-2 md:row-span-2"
-                    : "md:col-span-2 md:row-span-1"
-                }`}
-              >
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-                <div className="absolute bottom-0 left-0 p-8 w-full flex flex-col items-start justify-end h-full">
-                  <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    <span className="text-yellow-400 text-xs font-bold tracking-widest uppercase mb-2 block opacity-0 group-hover:opacity-100 transition-opacity delay-100">
-                      Collection
-                    </span>
-                    <h3
-                      className={`font-serif text-white mb-2 leading-tight ${
-                        index === 0 ? "text-4xl" : "text-3xl"
-                      }`}
-                    >
-                      {cat.name}
-                    </h3>
-                    <p className="text-white/80 text-sm max-w-[80%] line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                      {cat.description}
-                    </p>
-                  </div>
-                  <div className="absolute bottom-8 right-8 bg-white text-dark p-3 rounded-full opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 delay-200 shadow-lg">
-                    <ArrowRight className="w-5 h-5" />
-                  </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-100">
+            {CATEGORIES.map((cat) => (
+              <Link key={cat.id} to={cat.path} className="group relative rounded-2xl overflow-hidden h-75 md:h-full shadow-sm hover:shadow-xl transition-all duration-500">
+                <img src={cat.image} alt={cat.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+                
+                <div className="absolute bottom-0 left-0 w-full p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                    <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-1 opacity-0 group-hover:opacity-100 transition-opacity">Explore</p>
+                    <h3 className="text-2xl font-serif text-white mb-1">{cat.name}</h3>
+                    <p className="text-white/70 text-sm font-light">{cat.sub}</p>
+                </div>
+                
+                <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md border border-white/10 rounded-full p-2.5 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-500">
+                    <ArrowRight className="text-white w-4 h-4" />
                 </div>
               </Link>
             ))}
           </div>
         </div>
       </section>
+       <LegacySection />
       <NewArrivals />
-      <LegacySection/>
-      <ServicesSection />
+      <div className="py-12 bg-[#F9F4EF]"><ServicesSection /></div>
       <LocationSection />
-    </motion.div>
+    </div>
   );
 };
 
