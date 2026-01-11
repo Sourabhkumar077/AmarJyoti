@@ -7,7 +7,6 @@ import apiClient from "../../api/client";
 import { toast } from "react-hot-toast";
 import { logout } from "./authSlice";
 
-// --- TYPES ---
 interface CartItem {
   product: any;
   productId: string;
@@ -19,11 +18,10 @@ interface CartItem {
 
 interface CartState {
   items: CartItem[];
+  loadingItems: string[];
   loading: boolean;
   error: string | null;
 }
-
-// --- HELPERS (For Efficiency & Safety) ---
 
 const saveLocal = (items: CartItem[]) => {
   localStorage.setItem("guest_cart", JSON.stringify(items));
@@ -38,10 +36,8 @@ const getLocalCart = (): CartItem[] => {
   }
 };
 
-// Precise item matcher (Fixes the "Ghost Item" bug)
 const isSameItem = (item: CartItem, id: string, size?: string, color?: string) => {
   const matchId = item.productId === id || item.product?._id === id;
-  // Treat null and undefined as the same thing ("")
   const matchSize = (item.size || "") === (size || ""); 
   const matchColor = (item.color || "") === (color || "");
   return matchId && matchSize && matchColor;
@@ -61,11 +57,10 @@ const formatCartItems = (items: any[]): CartItem[] => {
 
 const initialState: CartState = {
   items: getLocalCart(),
+  loadingItems: [],
   loading: false,
   error: null,
 };
-
-// --- ASYNC THUNKS ---
 
 export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
@@ -99,7 +94,6 @@ export const addToCartAsync = createAsyncThunk(
   }
 );
 
-// --- OPTIMIZED DELETE: Returns ID instead of full list ---
 export const removeFromCartAsync = createAsyncThunk(
   "cart/removeFromCart",
   async (
@@ -112,9 +106,6 @@ export const removeFromCartAsync = createAsyncThunk(
       if (params.color) url += `color=${params.color}`;
 
       await apiClient.delete(url);
-      
-      // We return the params so we know what was deleted.
-      // We do NOT fetch the new list to avoid slow sync issues.
       return params; 
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message);
@@ -159,8 +150,6 @@ export const mergeGuestCart = createAsyncThunk(
   }
 );
 
-// --- SLICE ---
-
 const cartSlice = createSlice({
   name: "cart",
   initialState,
@@ -185,7 +174,6 @@ const cartSlice = createSlice({
       action: PayloadAction<{ id: string; size?: string; color?: string }>
     ) => {
       const { id, size, color } = action.payload;
-      // Filter creates a new array cleanly
       const initialLen = state.items.length;
       state.items = state.items.filter((item) => !isSameItem(item, id, size, color));
       
@@ -209,59 +197,58 @@ const cartSlice = createSlice({
     },
     clearCart: (state) => {
       state.items = [];
+      state.loadingItems = [];
       localStorage.removeItem("guest_cart");
     },
     clearCartLocal: (state) => {
       state.items = [];
+      state.loadingItems = [];
       localStorage.removeItem("guest_cart");
     },
   },
 
   extraReducers: (builder) => {
     builder
-      // Fetch
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.items = action.payload;
         state.loading = false;
       })
       
-      // Add
       .addCase(addToCartAsync.fulfilled, (state, action) => {
         state.items = action.payload;
         toast.success("Added to cart");
       })
 
-      // --- EFFICIENT DELETE LOGIC ---
+      // ---  Manages the Spinner in CartItem.tsx ---
       .addCase(removeFromCartAsync.pending, (state, action) => {
-        // 1. Remove immediately from UI (Optimistic)
-        const { id, size, color } = action.meta.arg;
-        state.items = state.items.filter((item) => !isSameItem(item, id, size, color));
+        state.loadingItems.push(action.meta.arg.id);
       })
-      .addCase(removeFromCartAsync.fulfilled, () => {
-        // 2. Success: Do nothing! The item is already gone.
-        // We do NOT update state from server response to avoid "Ghost Items"
+      .addCase(removeFromCartAsync.fulfilled, (state, action) => {
+        const { id, size, color } = action.payload;
+        state.items = state.items.filter((item) => !isSameItem(item, id, size, color));
+        state.loadingItems = state.loadingItems.filter(itemIds => itemIds !== id);
         toast.success("Removed from cart");
       })
-      .addCase(removeFromCartAsync.rejected, () => {
-        // 3. If failed, show error (User can refresh if needed)
+      .addCase(removeFromCartAsync.rejected, (state, action) => {
+        const { id } = action.meta.arg;
+        state.loadingItems = state.loadingItems.filter(itemIds => itemIds !== id);
         toast.error("Could not sync with server");
       })
 
-      // Update
+
       .addCase(updateCartItemAsync.fulfilled, (state, action) => {
         state.items = action.payload;
       })
 
-      // Merge
       .addCase(mergeGuestCart.fulfilled, (state, action) => {
         if(action.payload) state.items = action.payload;
         localStorage.removeItem("guest_cart");
         toast.success("Cart merged");
       })
 
-      // Logout
       .addCase(logout, (state) => {
         state.items = [];
+        state.loadingItems = [];
       });
   },
 });
