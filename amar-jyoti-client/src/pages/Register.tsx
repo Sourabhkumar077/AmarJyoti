@@ -18,7 +18,7 @@ const Register: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
-  const [timer, setTimer] = useState(0); // ⏳ Countdown Timer
+  const [timer, setTimer] = useState(0); 
 
   // Ref for Auto-Focusing OTP Input
   const otpInputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +45,7 @@ const Register: React.FC = () => {
       const response = await apiClient.post('/auth/register', data);
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       dispatch(setCredentials({
         user: data.user,
         token: data.token
@@ -53,10 +53,8 @@ const Register: React.FC = () => {
       toast.success("Account created successfully! 🎉");
       const localCart = localStorage.getItem('guest_cart');
       if (localCart) {
-        // @ts-ignore
         await dispatch(mergeGuestCart());
       }
-      // @ts-ignore
       dispatch(fetchCart());
 
       if (redirectTarget === 'checkout') {
