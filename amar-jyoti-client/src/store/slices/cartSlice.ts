@@ -242,7 +242,7 @@ const cartSlice = createSlice({
         // We do NOT update state from server response to avoid "Ghost Items"
         toast.success("Removed from cart");
       })
-      .addCase(removeFromCartAsync.rejected, (state) => {
+      .addCase(removeFromCartAsync.rejected, () => {
         // 3. If failed, show error (User can refresh if needed)
         toast.error("Could not sync with server");
       })
