@@ -1,12 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Minus, Plus, Trash2, Loader2 } from 'lucide-react'; 
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import toast from 'react-hot-toast'; 
+import { useAppDispatch } from '../../store/hooks';
 import {
   updateCartItemAsync,
-  removeFromCartAsync,
-  updateCartItemLocal,
-  removeFromCartLocal
+  removeFromCartAsync
 } from '../../store/slices/cartSlice';
 
 interface CartItemProps {
@@ -15,35 +12,42 @@ interface CartItemProps {
 
 const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
-  // Get the list of items currently processing
-  const { loadingItems } = useAppSelector((state) => state.cart);
+  
+  // Local loading state for granular UI feedback
+  const [isItemLoading, setIsItemLoading] = useState(false);
 
-  // Check if THIS specific item is loading
-  const isItemLoading = loadingItems.includes(item.productId);
+  const handleQuantityChange = async (newQty: number) => {
+    if (newQty < 1 || isItemLoading) return; 
 
-  const handleQuantityChange = (newQty: number) => {
-    if (newQty < 1 || isItemLoading) return; // Prevent action if loading
-
-    if (user) {
-      dispatch(updateCartItemAsync({
+    setIsItemLoading(true);
+    try {
+      // Unified Async Call (Backend handles Guest vs User)
+      await dispatch(updateCartItemAsync({
         productId: item.productId,
         quantity: newQty
-      }));
-    } else {
-      dispatch(updateCartItemLocal({ id: item.productId, quantity: newQty, size: item.size }));
+      })).unwrap();
+    } catch (error) {
+      console.error("Failed to update quantity", error);
+    } finally {
+      setIsItemLoading(false);
     }
   };
 
-  const handleRemove = () => {
-    if (isItemLoading) return; // Prevent double clicks
+  const handleRemove = async () => {
+    if (isItemLoading) return; 
 
-    if (user) {
+    setIsItemLoading(true);
+    try {
+      // Unified Async Call
       const idToSend = item.productId || item.product._id;
-      dispatch(removeFromCartAsync({id: idToSend, size: item.size, color: item.color}));
-    } else {
-      dispatch(removeFromCartLocal({id: item.productId, size: item.size, color: item.color}));
-      toast.success("Item removed from cart");
+      await dispatch(removeFromCartAsync({
+          id: idToSend, 
+          size: item.size, 
+          color: item.color
+      })).unwrap();
+    } catch (error) {
+      console.error("Failed to remove item", error);
+      setIsItemLoading(false); // Only stop loading if it failed (if success, item disappears)
     }
   };
 
@@ -59,7 +63,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
           alt={item.product?.name}
           className="w-full h-full object-cover"
         />
-        {/* Overlay Spinner on Image for Clear Feedback */}
+        {/* Overlay Spinner on Image */}
         {isItemLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
             <Loader2 className="w-6 h-6 animate-spin text-dark" />

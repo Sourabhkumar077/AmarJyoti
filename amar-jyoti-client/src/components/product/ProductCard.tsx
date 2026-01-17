@@ -1,9 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { addToCartAsync, addToCartLocal } from '../../store/slices/cartSlice';
-import toast from 'react-hot-toast';
+import { useAppDispatch } from '../../store/hooks';
+import { addToCartAsync } from '../../store/slices/cartSlice';
 import LazyImage from '../common/LazyImage'; 
 
 interface ProductCardProps {
@@ -12,29 +11,18 @@ interface ProductCardProps {
 
 const ProductCard = React.memo(({ product }: ProductCardProps) => {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (user) {
-      dispatch(addToCartAsync({ product: product, quantity: 1 }));
-    } else {
-      dispatch(addToCartLocal({
-        product: product, 
-        productId: product._id,
-        quantity: 1,
-        _id: Date.now().toString()
-      }));
-      toast.success(`${product.name.substring(0, 15)}... added to cart!`);
-    }
+    // Unified Logic: Works for both Guest and User automatically
+    dispatch(addToCartAsync({ product: product, quantity: 1 }));
   };
 
   return (
     <div className="group bg-white rounded-xl overflow-hidden border border-subtle-text/10 shadow-sm hover:shadow-lg transition-all duration-300">
       <Link to={`/product/${product._id}`} className="block relative aspect-4/5 overflow-hidden">
-        {/* Optimized Image Component */}
         <LazyImage 
           src={product.images?.[0] || '/placeholder.jpg'} 
           alt={product.name} 

@@ -5,7 +5,7 @@ import { ShoppingCart, Star, Trash2, User, Edit3, Ruler, Check } from 'lucide-re
 import { fetchProductById } from '../api/products.api';
 import { fetchProductReviews, addReview, deleteReview, updateReview } from '../api/reviews.api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addToCartLocal, addToCartAsync } from '../store/slices/cartSlice';
+import { addToCartAsync } from '../store/slices/cartSlice'; // ✅ Import Only Async
 import Loader from '../components/common/Loader';
 import toast from 'react-hot-toast';
 import SizeChartModal from '../components/product/SizeChartModal';
@@ -97,17 +97,13 @@ const ProductDetail: React.FC = () => {
         return;
       }
 
-      if (user) {
-        dispatch(addToCartAsync({ product: product, quantity: 1, size: selectedSize, color: selectedColor }));
-      } else {
-        dispatch(addToCartLocal({
-          productId: product._id,
-          quantity: 1,
-          product: product,
-          size: selectedSize,
-          color: selectedColor
-        }));
-      }
+      // ✅ Unified Call (No local/async split)
+      dispatch(addToCartAsync({ 
+        product: product, 
+        quantity: 1, 
+        size: selectedSize, 
+        color: selectedColor 
+      }));
     }
   };
 
@@ -149,13 +145,10 @@ const ProductDetail: React.FC = () => {
     <>
       <div className="bg-primary/10 min-h-screen py-10">
         <div className="container mx-auto px-4 md:px-8">
-
-
           {/* Product Info Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white p-6 rounded-xl shadow-sm mb-10">
 
             <div className="space-y-4">
-
               <div className="aspect-3/4 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                 <img src={product.images[selectedImage]} alt={product.name} className="w-full h-full object-cover" />
               </div>
@@ -170,7 +163,6 @@ const ProductDetail: React.FC = () => {
 
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-3">
-                {/* Category Name */}
                 <span className="text-sm text-gray-500 font-medium uppercase tracking-widest">
                   {product.category?.name || "Product"}
                 </span>
@@ -188,24 +180,12 @@ const ProductDetail: React.FC = () => {
               <div className="flex items-center gap-3">
                 {product.discount > 0 ? (
                   <>
-                    {/* Sale Price (Bold & Big) */}
-                    <p className="text-3xl font-bold text-accent">
-                      ₹{product.salePrice.toLocaleString('en-IN')}
-                    </p>
-                    {/* Original Price (Crossed Out) */}
-                    <p className="text-xl text-gray-400 line-through">
-                      ₹{product.price.toLocaleString('en-IN')}
-                    </p>
-                    {/* Discount Badge */}
-                    <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded border border-red-200">
-                      {product.discount}% OFF
-                    </span>
+                    <p className="text-3xl font-bold text-accent">₹{product.salePrice.toLocaleString('en-IN')}</p>
+                    <p className="text-xl text-gray-400 line-through">₹{product.price.toLocaleString('en-IN')}</p>
+                    <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded border border-red-200">{product.discount}% OFF</span>
                   </>
                 ) : (
-                  // Normal Price
-                  <p className="text-2xl font-bold text-accent">
-                    ₹{product.price.toLocaleString('en-IN')}
-                  </p>
+                  <p className="text-2xl font-bold text-accent">₹{product.price.toLocaleString('en-IN')}</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -219,14 +199,10 @@ const ProductDetail: React.FC = () => {
 
               <p className="text-gray-600 leading-relaxed">{product.description}</p>
 
-
-              {/*  SIZE SELECTION SECTION */}
               {product.sizes && product.sizes.length > 0 && (
                 <div className="py-4 border-t border-b border-gray-100">
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-bold text-dark">Select Size</span>
-
-                    {/*  "Size Guide" button added (Opens Modal) */}
                     <button
                       onClick={() => setIsSizeChartOpen(true)}
                       className="text-xs text-accent flex items-center gap-1 border-b border-dashed border-accent hover:text-yellow-600 font-medium cursor-pointer transition-colors"
@@ -252,7 +228,6 @@ const ProductDetail: React.FC = () => {
                   </div>
                 </div>
               )}
-              {/* Color selecting section */}
               {product.colors && product.colors.length > 0 && (
                 <div className="py-4 border-b border-gray-100">
                   <p className="font-bold text-dark mb-3">Select Color: <span className="text-accent font-normal capitalize">{selectedColor}</span></p>
@@ -266,10 +241,9 @@ const ProductDetail: React.FC = () => {
                             ? 'border-dark scale-110 ring-2 ring-offset-1 ring-dark'
                             : 'border-gray-200 hover:scale-105'
                           }`}
-                        style={{ backgroundColor: color.toLowerCase() }} // Use CSS color name/hex
+                        style={{ backgroundColor: color.toLowerCase() }}
                         title={color}
                       >
-                        {/* Checkmark overlay for active state */}
                         {selectedColor === color && (
                           <Check className={`w-5 h-5 drop-shadow-md ${['white', 'yellow', 'cream', 'beige', 'ivory'].includes(color.toLowerCase()) ? 'text-black' : 'text-white'}`} />
                         )}
@@ -287,12 +261,10 @@ const ProductDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Reviews Section */}
+          {/* Reviews Section - Kept exactly the same */}
           <div className="bg-white p-8 rounded-xl shadow-sm border border-subtle-text/10">
             <h2 className="text-2xl font-serif font-bold text-dark mb-8">Customer Reviews</h2>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Reviews List */}
               <div className="space-y-6 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
                 {reviewsLoading ? <Loader /> : reviews?.length === 0 ? (
                   <p className="text-subtle-text italic">No reviews yet. Be the first to review!</p>
@@ -317,22 +289,10 @@ const ProductDetail: React.FC = () => {
 
                       <div className="absolute top-4 right-4 flex gap-2 z-10">
                         {user?._id === rev.user?._id && (
-                          <button
-                            onClick={() => handleEditClick(rev)}
-                            className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 border border-blue-200"
-                            title="Edit"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
+                          <button onClick={() => handleEditClick(rev)} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 border border-blue-200"><Edit3 className="w-4 h-4" /></button>
                         )}
                         {(user?.role === 'admin' || user?._id === rev.user?._id) && (
-                          <button
-                            onClick={() => { if (confirm("Delete this review?")) deleteMutation.mutate(rev._id); }}
-                            className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 border border-red-200"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <button onClick={() => { if (confirm("Delete this review?")) deleteMutation.mutate(rev._id); }} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 border border-red-200"><Trash2 className="w-4 h-4" /></button>
                         )}
                       </div>
                     </div>
@@ -340,14 +300,11 @@ const ProductDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* Review Form */}
               <div className="h-fit sticky top-24">
                 <div id="review-form" className="bg-gray-50 p-6 rounded-lg border border-gray-100">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-dark">{editingReviewId ? 'Edit Your Review' : 'Write a Review'}</h3>
-                    {editingReviewId && (
-                      <button onClick={handleCancelEdit} className="text-xs text-red-500 hover:underline">Cancel Edit</button>
-                    )}
+                    {editingReviewId && <button onClick={handleCancelEdit} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}
                   </div>
 
                   {!user ? (
@@ -361,53 +318,24 @@ const ProductDetail: React.FC = () => {
                         <label className="block text-sm font-medium mb-1">Rating</label>
                         <div className="flex gap-1">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              type="button"
-                              key={star}
-                              onClick={() => setRating(star)}
-                              className={`p-1 transition-transform hover:scale-110 ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
-                            >
-                              <Star className={`w-6 h-6 ${rating >= star ? 'fill-current' : ''}`} />
-                            </button>
+                            <button type="button" key={star} onClick={() => setRating(star)} className={`p-1 transition-transform hover:scale-110 ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}><Star className={`w-6 h-6 ${rating >= star ? 'fill-current' : ''}`} /></button>
                           ))}
                         </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">Your Comment</label>
-                        <textarea
-                          required
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          className="w-full p-3 border rounded-md focus:border-accent outline-none min-h-25"
-                          placeholder="How was the product quality and fit?"
-                        ></textarea>
+                        <textarea required value={comment} onChange={(e) => setComment(e.target.value)} className="w-full p-3 border rounded-md focus:border-accent outline-none min-h-25" placeholder="How was the product quality and fit?"></textarea>
                       </div>
-                      <button
-                        type="submit"
-                        disabled={createMutation.isPending || updateMutation.isPending}
-                        className="w-full bg-accent text-white py-2 rounded-md hover:bg-yellow-600 transition shadow-md disabled:opacity-70"
-                      >
-                        {editingReviewId
-                          ? (updateMutation.isPending ? 'Updating...' : 'Update Review')
-                          : (createMutation.isPending ? 'Submitting...' : 'Submit Review')
-                        }
-                      </button>
+                      <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="w-full bg-accent text-white py-2 rounded-md hover:bg-yellow-600 transition shadow-md disabled:opacity-70">{editingReviewId ? (updateMutation.isPending ? 'Updating...' : 'Update Review') : (createMutation.isPending ? 'Submitting...' : 'Submit Review')}</button>
                     </form>
                   )}
                 </div>
               </div>
-
             </div>
           </div>
         </div>
       </div>
-
-
-      <SizeChartModal
-        isOpen={isSizeChartOpen}
-        onClose={() => setIsSizeChartOpen(false)}
-        category={product.category?.name || 'Suit'}
-      />
+      <SizeChartModal isOpen={isSizeChartOpen} onClose={() => setIsSizeChartOpen(false)} category={product.category?.name || 'Suit'} />
     </>
   );
 };

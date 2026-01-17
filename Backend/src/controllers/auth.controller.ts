@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as authService from "../services/auth.service";
+import * as cartService from "../services/cart.service";
 import User from "../models/user.model";
 import sendEmail from "../utils/sendEmail";
 import { Otp } from "../models/otp.model";
@@ -10,7 +11,7 @@ export const sendOtp = async (req: Request, res: Response) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Please enter email" });
 
-    // ⚡ OPTIMIZATION: Added .lean() for faster read
+    // Added .lean() for faster read
     const [existingUser, _deleted] = await Promise.all([
       User.findOne({ email }).select("_id").lean(), 
       Otp.deleteMany({ email }) 
@@ -19,10 +20,8 @@ export const sendOtp = async (req: Request, res: Response) => {
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Create OTP (Write operation, so no .lean() here)
+    // Create OTP (Write operation, so no .lean() here
     await Otp.create({ email, otp });
 
     // Send Email (Pooling enabled in utility)
@@ -40,72 +39,60 @@ export const sendOtp = async (req: Request, res: Response) => {
   }
 };
 
-// 2. REGISTER HANDLER (Optimized)
+// 2. REGISTER HANDLER 
 export const registerHandler = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
+    if (!otp) return res.status(400).json({ message: "Please provide the OTP" });
 
-    if (!otp) {
-      return res.status(400).json({ message: "Please provide the OTP" });
-    }
-
-    // ⚡ OPTIMIZATION: Added .lean()
     const validOtp = await Otp.findOne({ email, otp }).lean();
+    if (!validOtp) return res.status(400).json({ message: "Invalid or Expired OTP." });
 
-    if (!validOtp) {
-      return res.status(400).json({ message: "Invalid or Expired OTP. Please try again." });
-    }
-
-    // Register User
     const { user, token } = await authService.register(req.body);
-
-    // Cleanup OTP
     await Otp.deleteOne({ _id: validOtp._id });
 
-    // Welcome Email
-    const message = `Hello ${user.name},\n\nWelcome to Amar Jyoti! Your account has been successfully created.\nWe are excited to have you on board.\n\nHappy Shopping!`;
-    
-    // Fire and forget email (don't await if you want instant UI response)
+    // AUTOMATIC CART MERGE
+    const guestId = req.headers['x-guest-id'] as string;
+    if (guestId) {
+        await cartService.mergeGuestCart(user._id.toString(), guestId).catch(err => console.error("Merge error", err));
+    }
+
+    // Email logic...
     if (user.email) {
        sendEmail({
          email: user.email,
-         subject: "Welcome to Amar Jyoti - Registration Successful",
-         message: message,
+         subject: "Welcome to Amar Jyoti",
+         message: `Welcome ${user.name}! Happy Shopping!`,
        }).catch(err => console.log("Welcome Email failed:", err));
     }
 
     res.status(201).json({
       message: "User registered successfully",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error: any) {
     console.error("Register Error:", error); 
-    if (error.message === "Email is already registered" || error.code === 11000) {
-      return res.status(409).json({ message: "Email is already registered" });
-    }
+    if (error.code === 11000) return res.status(409).json({ message: "Email is already registered" });
     return res.status(500).json({ message: error.message || "Registration failed" });
   }
 };
 
+// LOGIN
 export const loginHandler = async (req: Request, res: Response) => {
   try {
     const { user, token } = await authService.login(req.body);
 
+    //  AUTOMATIC CART MERGE
+    const guestId = req.headers['x-guest-id'] as string;
+    if (guestId) {
+        // We don't await strictly to keep login fast, or we await to ensure data consistency
+        await cartService.mergeGuestCart(user._id.toString(), guestId).catch(err => console.error("Merge error", err));
+    }
     res.status(200).json({
       message: "Login successful",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error: any) {
     if (error.message === "Invalid email or password") {
@@ -115,6 +102,7 @@ export const loginHandler = async (req: Request, res: Response) => {
   }
 };
 
+// forget password
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { identifier } = req.body;

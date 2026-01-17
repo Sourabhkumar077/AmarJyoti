@@ -10,13 +10,13 @@ const Cart: React.FC = () => {
   const navigate = useNavigate();
   
   const { items = [], loading } = useAppSelector((state: any) => state.cart || { items: [] });
+  // We can still use user for other UI logic, but not for fetching permissions
   const { user } = useAppSelector((state: any) => state.auth);
 
   useEffect(() => {
-    if (user) {
-      dispatch(fetchCart());
-    }
-  }, [dispatch, user]);
+    // ✅ FIXED: Always fetch. The backend distinguishes User vs Guest via headers.
+    dispatch(fetchCart());
+  }, [dispatch]);
 
   const subtotal = items.reduce((acc: number, item: any) => {
     const price = item.product?.salePrice || item.product?.price || 0;

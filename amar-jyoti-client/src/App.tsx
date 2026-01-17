@@ -1,14 +1,14 @@
 import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { useAppDispatch } from './store/hooks';
+import { useAppDispatch, useAppSelector } from './store/hooks';
 import { fetchUserProfile } from './store/slices/authSlice'; 
 import { fetchCart } from './store/slices/cartSlice';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Loader from './components/common/Loader';
-import { useAppSelector } from './store/hooks';
 import { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/common/ScrollToTop';
+import { v4 as uuidv4 } from 'uuid';
 
 // Lazy Load Pages
 const Home = React.lazy(() => import('./pages/Home'));
@@ -33,8 +33,6 @@ const PaymentVerify  = React.lazy(()=>import('./pages/PaymentVerify'));
 const ProductForm = React.lazy(()=>import('./pages/admin/ProductForm'));
 const AdminProducts = React.lazy(()=>import('./pages/admin/AdminProducts'));
 
-
-
 // Protected Route Component (User)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAppSelector((state) => state.auth);
@@ -50,12 +48,21 @@ const AdminRoute = () => {
 
 function App() {
   const dispatch = useAppDispatch();
+  
   useEffect(() => {
+    // 1. Initialize Guest ID if missing
+    if (!localStorage.getItem('guest_cart_id')) {
+      localStorage.setItem('guest_cart_id', uuidv4());
+    }
+
+    // 2. Fetch User & Cart
     const token = localStorage.getItem('token'); 
     if (token) {
       dispatch(fetchUserProfile()); 
-      dispatch(fetchCart());
     }
+    // Always fetch cart (it will use Token OR GuestID)
+    dispatch(fetchCart());
+
   }, [dispatch]);
   
   return (
@@ -67,7 +74,6 @@ function App() {
             <main className="grow">
               <Suspense fallback={<Loader />}>
                 <Routes>
-                  {/* Public Routes */}
                   <Route path="/" element={<Home />} />
                   <Route path="/products" element={<Category />} />
                   <Route path="/product/:id" element={<ProductDetail />} />
@@ -80,15 +86,11 @@ function App() {
                   <Route path="/returns" element={<Returns />} />
                   <Route path="/contact" element={<Contact />} />
 
-                  {/* Protected User Routes */}
                   <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-                  <Route path="/payment/verify" element={
-                    <ProtectedRoute><PaymentVerify /></ProtectedRoute>
-                  } />
+                  <Route path="/payment/verify" element={<ProtectedRoute><PaymentVerify /></ProtectedRoute>} />
                   <Route path="/order-success" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
                   <Route path="/account" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
-                  {/* Admin Routes */}
                   <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<Dashboard />} />
@@ -100,7 +102,6 @@ function App() {
                     </Route>
                   </Route>
 
-                  {/* 404 Route */}
                   <Route path="*" element={<div className="p-20 text-center text-dark">404 - Page Not Found</div>} />
                 </Routes>
               </Suspense>
@@ -108,7 +109,6 @@ function App() {
             <Footer />
           </div>
         </Router>
-    
   );
 }
 

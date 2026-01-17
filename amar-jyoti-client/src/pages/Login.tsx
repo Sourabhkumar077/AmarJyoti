@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Lock, ArrowRight, Smartphone, Eye, EyeOff, Loader2 } from 'lucide-react'; // Added Eye icons
+import { Lock, ArrowRight, Smartphone, Eye, EyeOff, Loader2 } from 'lucide-react'; 
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
-import { mergeGuestCart, fetchCart } from '../store/slices/cartSlice';
+import { fetchCart } from '../store/slices/cartSlice'; // ✅ Fixed: Removed mergeGuestCart
 import toast from 'react-hot-toast';
 
 // Custom Shake Animation Style
@@ -24,7 +24,7 @@ const Login: React.FC = () => {
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     
-    // --- 1. NEW UX STATES ---
+    // --- UX STATES ---
     const [showPassword, setShowPassword] = useState(false);
     const [isShaking, setIsShaking] = useState(false);
 
@@ -47,18 +47,16 @@ const Login: React.FC = () => {
             return response.data;
         },
         onSuccess: async (data) => {
+            // 1. Save Token & User
             dispatch(setCredentials({
                 user: data.user,
                 token: data.token
             }));
+            
             toast.success(`Welcome back, ${data.user.name}! 👋`);
 
-            const localCart = localStorage.getItem('guest_cart');
-            if (localCart) {
-                // @ts-ignore
-                await dispatch(mergeGuestCart());
-            }
-            // @ts-ignore
+            // 2. Fetch the new "Merged" Cart from server
+            // (Backend handles the merge automatically via headers)
             dispatch(fetchCart());
 
             if (data.user.role === 'admin') {
@@ -70,7 +68,7 @@ const Login: React.FC = () => {
             }
         },
         onError: (error: any) => {
-            // --- 2. TRIGGER SHAKE ON ERROR ---
+            // Trigger Shake on Error
             setIsShaking(true); 
             setPassword(''); // Optional: Clear password on failure
             toast.error(error.response?.data?.message || "Invalid credentials");
@@ -89,7 +87,7 @@ const Login: React.FC = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-primary/30 py-12 px-4 sm:px-6 lg:px-8">
-            <style>{shakeKeyframes}</style> {/* Inject Animation */}
+            <style>{shakeKeyframes}</style> 
             
             <div className={`max-w-md w-full space-y-8 bg-light p-8 md:p-10 rounded-xl shadow-(--shadow-soft) transition-transform ${isShaking ? 'animate-shake border-red-400 border' : ''}`}>
 
@@ -115,7 +113,7 @@ const Login: React.FC = () => {
                                     id="identifier"
                                     name="identifier"
                                     type="text"
-                                    autoFocus // --- 3. AUTO FOCUS ---
+                                    autoFocus
                                     required
                                     className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm transition-all"
                                     placeholder="Enter email or phone"
@@ -125,7 +123,7 @@ const Login: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Password Input (Optimized) */}
+                        {/* Password Input */}
                         <div>
                             <div className="flex items-center justify-between mb-1">
                                 <label htmlFor="password" className="block text-sm font-medium text-dark">Password</label>
@@ -140,7 +138,6 @@ const Login: React.FC = () => {
                                 <input
                                     id="password"
                                     name="password"
-                                    // --- 4. TOGGLE TYPE ---
                                     type={showPassword ? "text" : "password"} 
                                     required
                                     className="appearance-none relative block w-full pl-10 pr-10 py-3 border border-subtle-text/20 rounded-md placeholder-subtle-text/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent sm:text-sm transition-all"
@@ -149,7 +146,7 @@ const Login: React.FC = () => {
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
                                 
-                                {/* --- 5. EYE ICON BUTTON --- */}
+                                {/* Eye Icon Button */}
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}

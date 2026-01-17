@@ -5,7 +5,7 @@ import { Mail, Lock, User, Phone, CheckCircle, Loader2, RefreshCw } from 'lucide
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
-import { mergeGuestCart, fetchCart } from '../store/slices/cartSlice';
+import { fetchCart } from '../store/slices/cartSlice'; // ✅ Fixed: Removed mergeGuestCart
 import toast from 'react-hot-toast';
 
 const Register: React.FC = () => {
@@ -46,15 +46,16 @@ const Register: React.FC = () => {
       return response.data;
     },
     onSuccess: async (data) => {
+      // 1. Save Token & User
       dispatch(setCredentials({
         user: data.user,
         token: data.token
       }));
+      
       toast.success("Account created successfully! 🎉");
-      const localCart = localStorage.getItem('guest_cart');
-      if (localCart) {
-        await dispatch(mergeGuestCart());
-      }
+      
+      // 2. Fetch the new "Merged" Cart from server
+      // (The backend already merged it during the register request based on x-guest-id)
       dispatch(fetchCart());
 
       if (redirectTarget === 'checkout') {

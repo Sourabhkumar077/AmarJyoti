@@ -6,14 +6,15 @@ import {
   updateCartItemHandler ,
   mergeCartHandler
 } from '../controllers/cart.controller';
-import { protect } from '../middlewares/auth.middleware';
+import { protect,optionalProtect } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/zodValidation';
 import { addToCartSchema, updateCartSchema } from '../utils/zodSchemas';
 
 const router = Router();
 
 // All Cart routes require Authentication
-router.use(protect);
+// router.use(protect);
+router.use(optionalProtect);
 
 router.get('/', getCartHandler); // GET /api/v1/cart
 
