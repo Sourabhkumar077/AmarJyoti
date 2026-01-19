@@ -15,15 +15,34 @@ const startServer = async () => {
             process.exit(1);
         }
         
-        // Connect to MongoDB Atlas [cite: 10]
-        await mongoose.connect(MONGO_URI);
-        logger.info("✅ Connected to MongoDB Atlas");
-
-        app.listen(PORT, () => {
-            logger.info(`🚀 Server running on port ${PORT}`);
+        // Optimize connection pool for high concurrency
+        await mongoose.connect(MONGO_URI, {
+            maxPoolSize: 50, 
+            serverSelectionTimeoutMS: 5000, 
+            socketTimeoutMS: 45000, 
         });
+
+        logger.info("Connected to MongoDB Atlas");
+
+        const server = app.listen(PORT, () => {
+            logger.info(`Server running on port ${PORT}`);
+        });
+
+        // Graceful Shutdown handling
+        const shutdown = () => {
+            logger.info('SIGTERM received. Shutting down gracefully...');
+            server.close(() => {
+                logger.info('Process terminated');
+                mongoose.connection.close(false);
+                process.exit(0);
+            });
+        };
+
+        process.on('SIGTERM', shutdown);
+        process.on('SIGINT', shutdown);
+
     } catch (error) {
-        logger.error(error, "❌ Database connection failed");
+        logger.error(error, "Database connection failed");
         process.exit(1);
     }
 };
