@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import apiClient from '../api/client';
 import { useAppDispatch } from '../store/hooks';
-import { clearCartLocal } from '../store/slices/cartSlice';
+import { clearCart } from '../store/slices/cartSlice';
 import Loader from '../components/common/Loader';
 import { CheckCircle, XCircle } from 'lucide-react';
 
@@ -19,7 +19,7 @@ const PaymentVerify: React.FC = () => {
       return res.data;
     },
     onSuccess: () => {
-      dispatch(clearCartLocal());
+      dispatch(clearCart());
       setTimeout(() => navigate('/order-success'), 2000);
     },
   });
