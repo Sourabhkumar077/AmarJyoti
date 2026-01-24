@@ -32,6 +32,9 @@ const AdminReviews  = React.lazy(()=>import('./pages/admin/AdminReviews'));
 const PaymentVerify  = React.lazy(()=>import('./pages/PaymentVerify'));
 const ProductForm = React.lazy(()=>import('./pages/admin/ProductForm'));
 const AdminProducts = React.lazy(()=>import('./pages/admin/AdminProducts'));
+const TermsCondition = React.lazy(() => import('./pages/TermsCondition'));
+const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
+const RefundPolicy = React.lazy(() => import('./pages/RefundPolicy'));
 
 // Protected Route Component (User)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -85,6 +88,9 @@ function App() {
                   <Route path="/shipping-policy" element={<ShippingPolicy />} />
                   <Route path="/returns" element={<Returns />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/terms" element={<TermsCondition />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/refund-policy" element={<RefundPolicy />} />
 
                   <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                   <Route path="/payment/verify" element={<ProtectedRoute><PaymentVerify /></ProtectedRoute>} />

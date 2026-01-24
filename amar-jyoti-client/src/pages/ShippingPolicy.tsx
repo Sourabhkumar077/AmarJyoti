@@ -1,78 +1,127 @@
+import React from 'react';
+import { Truck, Clock, MapPin, Info } from 'lucide-react';
 
-import { Truck, Clock, Globe, MapPin } from 'lucide-react';
-
-const ShippingPolicy = () => {
+const ShippingPolicy: React.FC = () => {
   return (
-    <div className="bg-gray-50 min-h-screen py-16">
+    <div className="bg-[#FDFBF7] min-h-screen py-16">
       <div className="container mx-auto px-4 md:px-8 max-w-4xl">
         
         <div className="text-center mb-12">
           <h1 className="text-4xl font-serif font-bold text-dark mb-4">Shipping Policy</h1>
-          <p className="text-subtle-text">Everything you need to know about our delivery process.</p>
+          <p className="text-subtle-text">Transparent shipping rates and delivery timelines.</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          
-          {/* Policy Sections */}
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-50">
             
-            <div className="p-8">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center shrink-0 text-accent">
-                  <Clock className="w-5 h-5" />
+            {/* Rate Section */}
+            <div className="p-8 md:p-10">
+              <div className="flex items-start gap-5">
+                <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center shrink-0 text-accent">
+                  <Truck className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-dark mb-2">Order Processing Time</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    All orders are processed within <strong>1-2 business days</strong>. Orders are not shipped or delivered on weekends or holidays. If we are experiencing a high volume of orders, shipments may be delayed by a few days.
+                  <h3 className="text-xl font-bold text-dark mb-3">Shipping Rates</h3>
+                  <p className="text-gray-600 leading-relaxed mb-4">
+                    Shipping costs are calculated based on the delivery zone from our warehouse in Gujarat.
+                  </p>
+                  
+                  {/* Zone Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-600 border border-gray-200 rounded-lg">
+                      <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 border-b">Zone</th>
+                          <th className="px-6 py-3 border-b">Region</th>
+                          <th className="px-6 py-3 border-b">Shipping Cost</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="bg-white border-b">
+                          <td className="px-6 py-4 font-medium">Zone A</td>
+                          <td className="px-6 py-4">Gujarat (Local)</td>
+                          <td className="px-6 py-4 font-bold text-dark">₹60</td>
+                        </tr>
+                        <tr className="bg-white border-b">
+                          <td className="px-6 py-4 font-medium">Zone B</td>
+                          <td className="px-6 py-4">Metro Cities (Mumbai, Delhi, Blr, etc.)</td>
+                          <td className="px-6 py-4 font-bold text-dark">₹100</td>
+                        </tr>
+                        <tr className="bg-white border-b">
+                          <td className="px-6 py-4 font-medium">Zone C</td>
+                          <td className="px-6 py-4">Rest of India</td>
+                          <td className="px-6 py-4 font-bold text-dark">₹150</td>
+                        </tr>
+                        <tr className="bg-white">
+                          <td className="px-6 py-4 font-medium">Zone D</td>
+                          <td className="px-6 py-4">J&K, North East & Remote Areas</td>
+                          <td className="px-6 py-4 font-bold text-dark">₹250</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3 italic">
+                    * Free shipping on all orders above ₹4999.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="p-8">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center shrink-0 text-accent">
-                  <Truck className="w-5 h-5" />
+            {/* Timeline Section */}
+            <div className="p-8 md:p-10">
+              <div className="flex items-start gap-5">
+                <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center shrink-0 text-accent">
+                  <Clock className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-dark mb-2">Shipping Rates & Delivery Estimates</h3>
-                  <p className="text-gray-600 leading-relaxed mb-4">
-                    Shipping charges for your order will be calculated and displayed at checkout.
-                  </p>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-600">
-                    <li><strong>Standard Shipping:</strong> Free for orders above ₹1999.</li>
-                    <li><strong>Expedited Shipping:</strong> Flat rate of ₹150 (Delivery in 2-3 days).</li>
-                    <li><strong>Estimated Delivery:</strong> 5-7 business days for standard shipping across India.</li>
+                  <h3 className="text-xl font-bold text-dark mb-3">Estimated Delivery Timelines</h3>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <li className="flex items-center gap-3 bg-white border border-gray-100 p-3 rounded-lg shadow-sm">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <span className="block font-bold text-dark text-sm">Zone A (Gujarat)</span>
+                        <span className="text-xs text-gray-500">2 - 3 Business Days</span>
+                      </div>
+                    </li>
+                    <li className="flex items-center gap-3 bg-white border border-gray-100 p-3 rounded-lg shadow-sm">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <span className="block font-bold text-dark text-sm">Metros & Cities</span>
+                        <span className="text-xs text-gray-500">4 - 6 Business Days</span>
+                      </div>
+                    </li>
+                    <li className="flex items-center gap-3 bg-white border border-gray-100 p-3 rounded-lg shadow-sm">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <span className="block font-bold text-dark text-sm">Rest of India</span>
+                        <span className="text-xs text-gray-500">7 - 9 Business Days</span>
+                      </div>
+                    </li>
+                    <li className="flex items-center gap-3 bg-white border border-gray-100 p-3 rounded-lg shadow-sm">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <span className="block font-bold text-dark text-sm">Remote / NE / J&K</span>
+                        <span className="text-xs text-gray-500">10+ Business Days</span>
+                      </div>
+                    </li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            <div className="p-8">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center shrink-0 text-accent">
-                  <MapPin className="w-5 h-5" />
+            {/* Processing Section */}
+            <div className="p-8 md:p-10">
+              <div className="flex items-start gap-5">
+                <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center shrink-0 text-accent">
+                  <Info className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-dark mb-2">Shipment Confirmation & Order Tracking</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    You will receive a Shipment Confirmation email once your order has shipped containing your tracking number(s). The tracking number will be active within 24 hours.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-8">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center shrink-0 text-accent">
-                  <Globe className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-dark mb-2">International Shipping</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    We currently do not ship outside India. However, we are working on it and will update our policy soon.
-                  </p>
+                  <h3 className="text-xl font-bold text-dark mb-3">Important Information</h3>
+                  <ul className="list-disc pl-5 space-y-2 text-gray-600 text-sm">
+                    <li>Orders are processed within 24-48 hours.</li>
+                    <li>We do not ship on Sundays or National Holidays.</li>
+                    <li>Shipping charges are non-refundable in case of returns (unless product is defective).</li>
+                  </ul>
                 </div>
               </div>
             </div>
