@@ -17,7 +17,6 @@ const router = Router();
 router.get('/product/:productId', getProductReviews);
 
 // Protected Routes
-// NOTE: We use 'addReview' instead of 'createReviewHandler' to match controller
 router.post('/product/:productId', protect, validate(reviewSchema), addReview);
 router.get('/my-reviews', protect, getMyReviews);
 

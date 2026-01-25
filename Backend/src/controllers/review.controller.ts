@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
-import  {asyncHandler}  from '../utils/asyncHandler';
-import  ApiError  from '../utils/ApiError';
-import  {ApiResponse} from "../utils/ApiResponse"
+import { asyncHandler } from '../utils/asyncHandler';
+import ApiError from '../utils/ApiError';
+import { ApiResponse } from "../utils/ApiResponse"
 import Review from '../models/review.model';
 import Product from '../models/product.model';
+import Order from '../models/order.model'; // Naya import
 import mongoose from 'mongoose';
 
 // --- Helper: Recalculate Average Rating ---
@@ -38,7 +39,7 @@ export const getProductReviews = asyncHandler(async (req: Request, res: Response
   );
 });
 
-// 2. Add Review
+// 2. Add Review (Verified Purchase Logic Added)
 export const addReview = asyncHandler(async (req: Request, res: Response) => {
   const { productId } = req.params;
   const { rating, comment } = req.body;
@@ -49,6 +50,17 @@ export const addReview = asyncHandler(async (req: Request, res: Response) => {
 
   const product = await Product.findById(productId);
   if (!product) throw new ApiError(404, "Product not found");
+
+  // Check if the user has a DELIVERED order that contains this product
+  const hasPurchased = await Order.findOne({
+    user: userId,
+    status: 'Delivered', 
+    "items.product": productId
+  });
+
+  if (!hasPurchased) {
+    throw new ApiError(403, "Aap sirf unhi products ko review kar sakte hain jo aapko deliver ho chuke hain.");
+  }
 
   const existingReview = await Review.findOne({ product: productId, user: userId });
   if (existingReview) {
@@ -71,7 +83,6 @@ export const addReview = asyncHandler(async (req: Request, res: Response) => {
 
 // 3. Delete Review
 export const deleteReview = asyncHandler(async (req: Request, res: Response) => {
-  // Route is /:id, so we look for req.params.id
   const { id } = req.params; 
   const userId = req.user?._id;
 
@@ -80,7 +91,6 @@ export const deleteReview = asyncHandler(async (req: Request, res: Response) => 
   const review = await Review.findById(id);
   if (!review) throw new ApiError(404, "Review not found");
 
-  // Authorization Check
   if (review.user.toString() !== userId?.toString() && req.user?.role !== 'admin') {
     throw new ApiError(403, "Not authorized to delete this review");
   }
@@ -121,7 +131,7 @@ export const updateReview = asyncHandler(async (req: Request, res: Response) => 
   );
 });
 
-// 5. Get My Reviews (New)
+// 5. Get My Reviews
 export const getMyReviews = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
   const reviews = await Review.find({ user: userId }).populate('product', 'name images');
@@ -131,7 +141,7 @@ export const getMyReviews = asyncHandler(async (req: Request, res: Response) => 
   );
 });
 
-// 6. Get All Reviews (Admin - New)
+// 6. Get All Reviews (Admin)
 export const getAllReviews = asyncHandler(async (req: Request, res: Response) => {
   const reviews = await Review.find()
     .populate('user', 'name email')
